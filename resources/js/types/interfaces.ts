@@ -1,0 +1,31 @@
+export interface Subject {
+    id: number;
+    name: string;
+    description: string;
+    created_at: string;
+    updated_at: string;
+    is_deleted: boolean;
+}
+
+export interface LearningMaterial {
+    id: number;
+    subject_id: number;
+    name: string;
+    created_by: string;
+    description: string;
+    file_path: string;
+    created_at: string;
+    updated_at: string;
+    is_deleted: boolean;
+}
+
+export interface Question {
+    id: number;
+    learning_material_id: number;
+    media_path: string;
+    question_text: string;
+    created_by: string;
+    created_at: string;
+    updated_at: string;
+    is_deleted: boolean;
+}

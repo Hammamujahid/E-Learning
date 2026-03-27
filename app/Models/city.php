@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Subject extends Model
+class city extends Model
 {
     use HasFactory;
 
@@ -15,8 +15,8 @@ class Subject extends Model
         'is_deleted'
     ];
 
-    public function learningMaterials(): HasMany
+    public function profiles(): HasMany
     {
-        return $this->hasMany(LearningMaterial::class);
+        return $this->hasMany(Profile::class);
     }
 }

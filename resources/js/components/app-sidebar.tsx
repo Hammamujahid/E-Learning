@@ -2,21 +2,37 @@ import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
-import { type NavItem } from '@/types';
-import { Link } from '@inertiajs/react';
-import { LayoutGrid } from 'lucide-react';
+import { SharedData, type NavItem } from '@/types';
+import { Link, usePage } from '@inertiajs/react';
+import { LayoutDashboard, User, TableOfContents} from 'lucide-react';
 import AppLogo from './app-logo';
 
-const mainNavItems: NavItem[] = [
+const adminNavItems: NavItem[] = [
     {
         title: 'Dashboard',
         href: '/dashboard',
-        icon: LayoutGrid,
+        icon: LayoutDashboard,
     },
     {
-        title: 'Pelajaran',
-        href: '/learning-material',
-        icon: null,
+        title: 'Users',
+        href: '/users',
+        icon: User,
+    },
+];
+
+const teacherNavItems: NavItem[] = [
+    {
+        title: 'Overview',
+        href: '/overview',
+        icon: TableOfContents,
+    },
+];
+
+const userNavItems: NavItem[] = [
+    {
+        title: 'Overview',
+        href: '/overview',
+        icon: TableOfContents,
     },
 ];
 
@@ -34,6 +50,8 @@ const footerNavItems: NavItem[] = [
 ];
 
 export function AppSidebar() {
+    const { auth } = usePage<SharedData>().props;
+
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>
@@ -49,7 +67,9 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                <NavMain items={mainNavItems} />
+                {auth.user.role === 'admin' && <NavMain items={adminNavItems} />}
+                {auth.user.role === 'teacher' && <NavMain items={teacherNavItems} />}
+                {auth.user.role === 'user' && <NavMain items={userNavItems} />}
             </SidebarContent>
 
             <SidebarFooter>

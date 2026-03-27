@@ -19,9 +19,15 @@ Route::middleware(['auth', 'verified', RoleMiddleware::class . ':admin'])->group
 });
 
 Route::middleware(['auth', 'verified', RoleMiddleware::class . ':user'])->group(function () {
-    Route::get('home', function () {
-        return Inertia::render('user/home');
-    })->name('user.home');
+    Route::get('overview', function () {
+        return Inertia::render('user/overview');
+    })->name('user.overview');
+});
+
+Route::middleware(['auth', 'verified', RoleMiddleware::class . ':teacher'])-> group(function () {
+    Route::get('overview', function () {
+        return Inertia::render('teacher/overview');
+    })->name('teacher.overview');
 });
 
 require __DIR__.'/settings.php';
