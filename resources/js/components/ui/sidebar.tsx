@@ -268,7 +268,7 @@ function SidebarTrigger({
       }}
       {...props}
     >
-      <PanelLeftIcon />
+      <PanelLeftIcon className="text-muted-foreground" />
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
   )

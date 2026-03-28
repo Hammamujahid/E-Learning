@@ -166,7 +166,7 @@ export default function Welcome() {
                                                         <div className="rounded-md bg-secondary p-2">
                                                             <SquareArrowOutUpRight className="h-4 w-4 text-primary-foreground" />
                                                         </div>
-                                                    </div>
+                                                    </div>bg=
 
                                                     {/* DESCRIPTION */}
                                                     <div className="mt-3">
