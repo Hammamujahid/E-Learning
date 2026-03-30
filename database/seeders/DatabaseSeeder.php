@@ -17,7 +17,7 @@ class DatabaseSeeder extends Seeder
             SubjectTableSeeder::class,
             LearningMaterialTableSeeder::class,
             UserTableSeeder::class,
-
+            ActivitySeederTable::class,
         ]);
     }
 }

@@ -86,20 +86,19 @@ export default function Dashboard() {
                         <div className="pointer-events-none absolute -right-10 -bottom-10 h-32 w-32 rounded-full bg-chart-1/20 blur-2xl"></div>
                     </div>
                 </div>
-<div className="relative min-h-[100vh] flex-1 flex-col justify-start items-center overflow-hidden rounded-xl border border-sidebar-border/70 md:min-h-min dark:border-sidebar-border p-6">                    {/* HEADER */}
+                <div className="relative min-h-[100vh] flex-1 flex-col items-center justify-start overflow-hidden rounded-xl border border-sidebar-border/70 p-6 md:min-h-min dark:border-sidebar-border">
                     <div className="mb-4 flex items-center justify-between">
                         <h1 className="text-2xl font-semibold text-secondary">Recent Activity</h1>
-
-                        {/* FILTER */}
                         <div className="flex items-center gap-3">
-                            <button className="bg-muted-foreground/20 flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm text-secondary font-semibold transition hover:bg-muted">
+                            <button className="flex items-center gap-2 rounded-md border bg-muted-foreground/20 px-3 py-1.5 text-sm font-semibold text-secondary transition hover:bg-muted">
                                 Filter by Type
                                 <ChevronDown className="h-4 w-4" />
                             </button>
                         </div>
                     </div>
-
-
+                    <div>
+                        
+                    </div>
                 </div>
             </div>
         </AppLayout>

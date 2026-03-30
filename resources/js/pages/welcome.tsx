@@ -20,9 +20,9 @@ export default function Welcome() {
             setError(null);
             try {
                 const [subjectResponse, learningMaterialResponse, questionResponse] = await Promise.all([
-                    fetch('/api/subjects'),
-                    fetch('/api/learning-materials'),
-                    fetch('/api/questions'),
+                    fetch('/api/getSubjects'),
+                    fetch('/api/getLearningMaterials'),
+                    fetch('/api/getQuestions'),
                 ]);
                 if (!subjectResponse.ok || !learningMaterialResponse.ok || !questionResponse.ok) {
                     throw new Error('Failed to fetch data');
