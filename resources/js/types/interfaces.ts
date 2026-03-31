@@ -29,3 +29,14 @@ export interface Question {
     updated_at: string;
     is_deleted: boolean;
 }
+
+export interface Activity{
+    id: number;
+    model_id: number;
+    type: string;
+    description: string;
+    action: string;
+    created_at: string;
+    updated_at: string;
+    is_deleted: boolean;
+}

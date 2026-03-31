@@ -4,7 +4,7 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { SharedData, type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { LayoutDashboard, User, TableOfContents} from 'lucide-react';
+import { BookOpen, LayoutDashboard, SquarePen, TableOfContents, Users } from 'lucide-react';
 import AppLogo from './app-logo';
 
 const adminNavItems: NavItem[] = [
@@ -14,10 +14,20 @@ const adminNavItems: NavItem[] = [
         icon: LayoutDashboard,
     },
     {
-        title: 'Users',
-        href: '/users',
-        icon: User,
+        title: 'User',
+        href: '/user',
+        icon: Users,
     },
+    {
+        title: 'Material',
+        href: '/learning-material',
+        icon: BookOpen,
+    },
+    {
+        title: 'Question',
+        href: '/question',
+        icon: SquarePen,
+    }
 ];
 
 const teacherNavItems: NavItem[] = [

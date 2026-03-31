@@ -12,34 +12,32 @@ export default function Welcome() {
     const [learningMaterial, setLearningMaterial] = useState<LearningMaterial[]>([]);
     const [question, setQuestion] = useState<Question[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
-    const [error, setError] = useState<string | null>(null);
+
+    const fetchData = async () => {
+        setLoading(true);
+        try {
+            const [subjectResponse, learningMaterialResponse, questionResponse] = await Promise.all([
+                fetch('/api/getSubjects'),
+                fetch('/api/getLearningMaterials'),
+                fetch('/api/getQuestions'),
+            ]);
+            if (!subjectResponse.ok || !learningMaterialResponse.ok || !questionResponse.ok) {
+                throw new Error('Failed to fetch data');
+            }
+            const subjectResult = await subjectResponse.json();
+            const learningMaterialResult = await learningMaterialResponse.json();
+            const questionResult = await questionResponse.json();
+            setSubject(subjectResult.data);
+            setLearningMaterial(learningMaterialResult.data);
+            setQuestion(questionResult.data);
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchData = async () => {
-            setLoading(true);
-            setError(null);
-            try {
-                const [subjectResponse, learningMaterialResponse, questionResponse] = await Promise.all([
-                    fetch('/api/getSubjects'),
-                    fetch('/api/getLearningMaterials'),
-                    fetch('/api/getQuestions'),
-                ]);
-                if (!subjectResponse.ok || !learningMaterialResponse.ok || !questionResponse.ok) {
-                    throw new Error('Failed to fetch data');
-                }
-                const subjectResult = await subjectResponse.json();
-                const learningMaterialResult = await learningMaterialResponse.json();
-                const questionResult = await questionResponse.json();
-                setSubject(subjectResult.data);
-                setLearningMaterial(learningMaterialResult.data);
-                setQuestion(questionResult.data);
-            } catch (error) {
-                console.error(error);
-                setError('Failed to fetch data');
-            } finally {
-                setLoading(false);
-            }
-        };
         fetchData();
     }, []);
 
@@ -47,14 +45,6 @@ export default function Welcome() {
         return (
             <div className="flex h-screen items-center justify-center">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <div className="flex h-screen items-center justify-center">
-                <p className="text-lg text-destructive">Error: {error}</p>
             </div>
         );
     }
@@ -166,22 +156,18 @@ export default function Welcome() {
                                                         <div className="rounded-md bg-secondary p-2">
                                                             <SquareArrowOutUpRight className="h-4 w-4 text-primary-foreground" />
                                                         </div>
-                                                    </div>bg=
-
+                                                    </div>
                                                     {/* DESCRIPTION */}
                                                     <div className="mt-3">
                                                         <p className="line-clamp-3 text-sm text-muted-foreground">
                                                             {item.description || 'Tidak ada deskripsi'}
                                                         </p>
                                                     </div>
-
                                                     {/* CTA */}
                                                     <Link
                                                         href={`/materi/${item.id}`}
                                                         className="mt-4 inline-flex items-center justify-between text-sm font-medium text-primary hover:underline"
-                                                    >
-
-                                                    </Link>
+                                                    ></Link>
                                                 </CardContent>
                                             </Card>
                                         </CarouselItem>

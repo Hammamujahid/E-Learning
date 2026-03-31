@@ -16,6 +16,14 @@ class QuestionController extends Controller
         return response()->json(['status' => 200, 'data' => $questions]);
     }
 
+    public function getNewQuestions()
+    {
+        $newQuestions = question::where('is_deleted', false)
+            ->where('created_at', '>=', now()->subWeek())
+            ->count();
+        return response()->json(['status' => 200, 'data' => $newQuestions]);
+    }
+
     /**
      * Show the form for creating a new resource.
      */

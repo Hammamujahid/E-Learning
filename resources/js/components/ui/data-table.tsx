@@ -34,28 +34,42 @@ export function DataTable<TData, TValue>({
 }: DataTableProps<TData, TValue>) {
       const [sorting, setSorting] = React.useState<SortingState>([])
 
+  const [pagination, setPagination] = React.useState({
+  pageIndex: 0,
+  pageSize: 3, // atur jumlah data per halaman
+});
+
+
   const table = useReactTable({
     data,
     columns,
+    onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
     onSortingChange: setSorting,
     getSortedRowModel: getSortedRowModel(),
     state: {
       sorting,
+      pagination
     },
   })
+
 
   return (
     <div>
           <div className="overflow-hidden rounded-md border">
-      <Table>
+      <Table className="table-fixed w-full">
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>
               {headerGroup.headers.map((header) => {
                 return (
-                  <TableHead key={header.id}>
+                  <TableHead   key={header.id}
+  style={{
+    width: header.getSize(),
+    minWidth: header.getSize(),
+    maxWidth: header.getSize(),
+  }}>
                     {header.isPlaceholder
                       ? null
                       : flexRender(
@@ -76,8 +90,15 @@ export function DataTable<TData, TValue>({
                 data-state={row.getIsSelected() && "selected"}
               >
                 {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  <TableCell   key={cell.id}
+  style={{
+    width: cell.column.getSize(),
+    minWidth: cell.column.getSize(),
+    maxWidth: cell.column.getSize(),
+  }}>
+    <div className="truncate overflow-hidden whitespace-nowrap">
+                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+    </div>
                   </TableCell>
                 ))}
               </TableRow>
@@ -92,7 +113,7 @@ export function DataTable<TData, TValue>({
         </TableBody>
       </Table>
     </div>
-          <div className="flex items-center justify-end space-x-2 py-4">
+          <div className="text-primary flex items-center justify-end space-x-2 py-4">
         <Button
           variant="outline"
           size="sm"
