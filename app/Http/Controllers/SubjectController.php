@@ -12,17 +12,24 @@ class SubjectController extends Controller
      */
     public function index()
     {
-        $subjects = Subject::where('is_deleted', false)->get();
-        return response()->json(['status' => 200, 'data' => $subjects]);
+        $subjects = Subject::query();
+
+        $subjects->when(
+            request()->has('is_deleted'),
+            fn($q) => $q->where('is_deleted', request()->boolean('is_deleted')),
+            fn($q) => $q->where('is_deleted', false)
+        );
+
+        return response()->json([
+            'status' => 200,
+            'data' => $subjects->get()
+        ]);
     }
 
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
-    {
-        //
-    }
+    public function create() {}
 
     /**
      * Store a newly created resource in storage.

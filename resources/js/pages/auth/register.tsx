@@ -1,6 +1,6 @@
 import { Head, useForm } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
-import { FormEventHandler } from 'react';
+import { FormEventHandler, useState } from 'react';
 
 import InputError from '@/components/input-error';
 import TextLink from '@/components/text-link';
@@ -8,6 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AuthLayout from '@/layouts/auth-layout';
+import { api } from '@/lib/api';
+import { AxiosError } from 'axios';
+import { toast } from 'sonner';
 
 type RegisterForm = {
     name: string;
@@ -16,19 +19,58 @@ type RegisterForm = {
     password_confirmation: string;
 };
 
+interface RegisterResponse {
+    token: string;
+    user: {
+        id: number;
+        name: string;
+        email: string;
+        role: string;
+    };
+}
+
 export default function Register() {
-    const { data, setData, post, processing, errors, reset } = useForm<Required<RegisterForm>>({
+    const { data, setData, errors, setError, reset } = useForm<Required<RegisterForm>>({
         name: '',
         email: '',
         password: '',
         password_confirmation: '',
     });
 
-    const submit: FormEventHandler = (e) => {
+    const [processing, setProcessing] = useState(false);
+
+    const submit: FormEventHandler = async (e) => {
         e.preventDefault();
-        post(route('register'), {
-            onFinish: () => reset('password', 'password_confirmation'),
-        });
+        setProcessing(true);
+
+        try {
+            await api.post<RegisterResponse>('/api/register', {
+                name: data.name,
+                email: data.email,
+                password: data.password,
+                password_confirmation: data.password_confirmation,
+                role: 'user',
+            });
+
+            window.location.href = '/auth/login';
+
+            toast.success('Registrasi berhasil!');
+        } catch (err) {
+            const error = err as AxiosError<{ errors?: Record<string, string[]> }>;
+            const status = error.response?.status;
+            const validationErrors = error.response?.data?.errors;
+
+            if (status === 422 && validationErrors) {
+                if (validationErrors.name) setError('name', validationErrors.name[0]);
+                if (validationErrors.email) setError('email', validationErrors.email[0]);
+                if (validationErrors.password) setError('password', validationErrors.password[0]);
+            } else {
+                toast.error('Registrasi gagal. Coba lagi nanti.');
+            }
+            reset('password', 'password_confirmation');
+        } finally {
+            setProcessing(false);
+        }
     };
 
     return (
@@ -109,7 +151,7 @@ export default function Register() {
 
                 <div className="text-center text-sm text-muted-foreground">
                     Already have an account?{' '}
-                    <TextLink className='text-secondary' href={route('login')} tabIndex={6}>
+                    <TextLink className="text-secondary" href={route('login')} tabIndex={6}>
                         Log in
                     </TextLink>
                 </div>

@@ -17,7 +17,8 @@ class DatabaseSeeder extends Seeder
             SubjectTableSeeder::class,
             LearningMaterialTableSeeder::class,
             UserTableSeeder::class,
-            ActivitySeederTable::class,
+            ProfileTableSeeder::class,
+            ActivityTableSeeder::class,
         ]);
     }
 }

@@ -1,26 +1,14 @@
 <?php
 
-use App\Http\Controllers\SubjectController;
-use App\Http\Controllers\LearningMaterialController;
-use App\Http\Controllers\QuestionController;
-use App\Http\Controllers\ActivityController;
-use App\Http\Controllers\UserController;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
-
-Route::get('/getUsers', [UserController::class, 'index']);
-Route::get('/getNewUsers', [UserController::class, 'getNewUsers']);
-
-//Subject Routes
-Route::get('/getSubjects', [SubjectController::class, 'index']);
-
-//Learning Material Routes
-Route::get('/getLearningMaterials', [LearningMaterialController::class, 'index']);
-Route::get('/getNewLearningMaterials', [LearningMaterialController::class, 'getNewMaterials']);
-
-//Question Routes
-Route::get('/getQuestions', [QuestionController::class, 'index']);
-Route::get('/getNewQuestions', [QuestionController::class, 'getNewQuestions']);
-
-//Activity Routes
-Route::get('/getActivities', [ActivityController::class, 'index']);
+require __DIR__ . '/api/auth.php';
+require __DIR__ . '/api/settings.php';
+require __DIR__ . '/api/profile.php';
+require __DIR__ . '/api/user.php';
+require __DIR__ . '/api/city.php';
+require __DIR__ . '/api/subject.php';
+require __DIR__ . '/api/learning-material.php';
+require __DIR__ . '/api/question.php';
+require __DIR__ . '/api/answer.php';
+require __DIR__ . '/api/quiz-attempt.php';
+require __DIR__ . '/api/checking-answer.php';
+require __DIR__ . '/api/activity.php';

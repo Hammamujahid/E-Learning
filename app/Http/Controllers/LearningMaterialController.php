@@ -10,15 +10,28 @@ class LearningMaterialController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $learningMaterials = LearningMaterial::where('is_deleted', false)
-        ->with('subject')
-        ->get();
-        return response()->json(['status' => 200, 'data' => $learningMaterials]);
+        $materials = LearningMaterial::query();
+
+        $materials->when(
+            $request->has('is_deleted'),
+            fn($q) => $q->where('is_deleted', $request->boolean('is_deleted')),
+            fn($q) => $q->where('is_deleted', false)
+        );
+
+        $materials->when(
+            $request->boolean('subject'),
+            fn($q) => $q->with('subject')
+        );
+
+        return response()->json([
+            'status' => 200,
+            'data' => $materials->get()
+        ]);
     }
 
-    public function getNewMaterials()
+    public function latest()
     {
         $newMaterials = LearningMaterial::where('is_deleted', false)
             ->where('created_at', '>=', now()->subWeek())

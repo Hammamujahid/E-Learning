@@ -5,7 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use App\Models\Activity;
 
-class ActivitySeederTable extends Seeder
+class ActivityTableSeeder extends Seeder
 {
     /**
      * Run the database seeds.

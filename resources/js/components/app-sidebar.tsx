@@ -2,30 +2,32 @@ import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
-import { SharedData, type NavItem } from '@/types';
-import { Link, usePage } from '@inertiajs/react';
+import { User, type NavItem } from '@/types';
+import { Link } from '@inertiajs/react';
 import { BookOpen, LayoutDashboard, SquarePen, TableOfContents, Users } from 'lucide-react';
 import AppLogo from './app-logo';
+import { useEffect, useState } from 'react';
+import { clearAuth, getUser, redirectToLogin } from '@/lib/auth';
 
 const adminNavItems: NavItem[] = [
     {
         title: 'Dashboard',
-        href: '/dashboard',
+        href: '/admin/dashboard',
         icon: LayoutDashboard,
     },
     {
         title: 'User',
-        href: '/user',
+        href: '/admin/user',
         icon: Users,
     },
     {
         title: 'Material',
-        href: '/learning-material',
+        href: '/admin/learning-material',
         icon: BookOpen,
     },
     {
         title: 'Question',
-        href: '/question',
+        href: '/admin/question',
         icon: SquarePen,
     }
 ];
@@ -33,7 +35,7 @@ const adminNavItems: NavItem[] = [
 const teacherNavItems: NavItem[] = [
     {
         title: 'Overview',
-        href: '/overview',
+        href: '/teacher/overview',
         icon: TableOfContents,
     },
 ];
@@ -41,7 +43,7 @@ const teacherNavItems: NavItem[] = [
 const userNavItems: NavItem[] = [
     {
         title: 'Overview',
-        href: '/overview',
+        href: '/user/overview',
         icon: TableOfContents,
     },
 ];
@@ -60,7 +62,21 @@ const footerNavItems: NavItem[] = [
 ];
 
 export function AppSidebar() {
-    const { auth } = usePage<SharedData>().props;
+  const [user, setUser] = useState<User | null>(null);
+
+    useEffect(() => {
+        const u = getUser();
+
+        if (!u) {
+            clearAuth();
+            redirectToLogin();
+            return;
+        }
+
+        setUser(u);
+    }, []);
+
+    if (!user) return null;
 
     return (
         <Sidebar collapsible="icon" variant="inset">
@@ -77,9 +93,9 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                {auth.user.role === 'admin' && <NavMain items={adminNavItems} />}
-                {auth.user.role === 'teacher' && <NavMain items={teacherNavItems} />}
-                {auth.user.role === 'user' && <NavMain items={userNavItems} />}
+                {user.role === 'admin' && <NavMain items={adminNavItems} />}
+                {user.role === 'teacher' && <NavMain items={teacherNavItems} />}
+                {user.role === 'user' && <NavMain items={userNavItems} />}
             </SidebarContent>
 
             <SidebarFooter>

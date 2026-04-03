@@ -1,14 +1,15 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
 import { DataTable } from '@/components/ui/data-table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AppLayout from '@/layouts/app-layout';
+import { api } from '@/lib/api';
 import { type BreadcrumbItem } from '@/types';
 import type { LearningMaterial, Subject } from '@/types/interfaces';
 import { Head } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
-import React, { useCallback, useEffect, useState } from 'react';
+import { Loader2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -18,103 +19,163 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-export default function LearningMaterial() {
+export default function LearningMaterialPage() {
     const [subject, setSubject] = useState<Subject[]>([]);
     const [learningMaterials, setLearningMaterial] = useState<LearningMaterial[]>([]);
     const [loading, setLoading] = useState(true);
 
-    const columns = React.useMemo<ColumnDef<Subject>[]>(
-        () => [
-            {
-                header: 'No',
-                size: 50,
-                cell: ({ row }) => row.index + 1,
+    const subjectColumns: ColumnDef<Subject>[] = [
+        {
+            header: 'No',
+            size: 50,
+            cell: ({ row }) => {
+                return <div className="text-center">{row.index + 1}</div>;
             },
-            {
-                accessorKey: 'name',
-                header: 'Nama Pelajaran',
-                size: 150,
+        },
+        {
+            accessorKey: 'name',
+            header: 'Pelajaran',
+            size: 150,
+            cell: ({ row }) => {
+                return (
+                    <div className="text-center">
+                        <span>{row.original.name}</span>
+                    </div>
+                );
             },
-            {
-                accessorKey: 'created_at',
-                header: 'Dibuat Pada',
-                size: 150,
-                cell: ({ row}) => new Date(row.original.created_at).toLocaleDateString('id-ID')
-            },
-            {
-                header: 'Aksi',
-                size: 150,
-            },
-        ],
-        [],
-    );
+        },
+        {
+            accessorKey: 'created_at',
+            header: 'Dibuat Pada',
+            size: 150,
+            cell: ({ row }) => {
+                const date = new Date(row.original.created_at);
 
-    const learningMaterialsColumns = React.useMemo<ColumnDef<LearningMaterial>[]>(
-        () => [
-            {
-                header: 'No',
-                size: 50,
-                cell: ({ row }) => row.index + 1,
+                return (
+                    <div className="text-center">
+                        {date.toLocaleString('id-ID', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                        })}
+                    </div>
+                );
             },
-            {
-                accessorKey: 'name',
-                header: 'Nama Materi',
-                size: 150,
-            },
-            {
-                accessorKey: 'subject.name',
-                header: 'Nama Pelajaran',
-                size: 150,
-            },
-            {
-                accessorKey: 'created_by',
-                header: 'Dibuat Oleh',
-                size: 150,
-            },
-            {
-                accessorKey: 'created_at',
-                header: 'Dibuat Pada',
-                size: 150,
-                cell: ({ row }) => new Date(row.original.created_at).toLocaleDateString('id-ID')
-            },
-            {
-                header: 'Aksi',
-                size: 150,
-            },
-        ],
-        [],
-    );
+        },
+        {
+            header: 'Aksi',
+            size: 150,
+        },
+    ];
 
-    const fetchData = useCallback(async () => {
+    const learningMaterialsColumns: ColumnDef<LearningMaterial>[] = [
+        {
+            header: 'No',
+            size: 50,
+            cell: ({ row }) => {
+                return <div className="text-center">{row.index + 1}</div>;
+            },
+        },
+        {
+            accessorKey: 'name',
+            header: 'Materi',
+            size: 150,
+            cell: ({ row }) => {
+                return (
+                    <div className="text-center">
+                        <span>{row.original.name}</span>
+                    </div>
+                );
+            },
+        },
+        {
+            accessorKey: 'subject.name',
+            header: 'Pelajaran',
+            size: 150,
+            cell: ({ row }) => {
+                return (
+                    <div className="text-center">
+                        <span>{row.original.subject?.name ?? '-'}</span>
+                    </div>
+                );
+            },
+        },
+        {
+            accessorKey: 'created_by',
+            header: 'Dibuat Oleh',
+            size: 150,
+            cell: ({ row }) => {
+                return (
+                    <div className="text-center">
+                        <span>{row.original.created_by || '-'}</span>
+                    </div>
+                );
+            },
+        },
+        {
+            accessorKey: 'created_at',
+            header: 'Dibuat Pada',
+            size: 150,
+            cell: ({ row }) => {
+                const date = new Date(row.original.created_at);
+
+                return (
+                    <div className="text-center">
+                        {date.toLocaleString('id-ID', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                        })}
+                    </div>
+                );
+            },
+        },
+        {
+            header: 'Aksi',
+            size: 200,
+        },
+    ];
+
+    const fetchData = async () => {
         setLoading(true);
         try {
-            const subjectsResponse = await fetch('/api/subjects');
-            const learningMaterialsResponse = await fetch('/api/learning-materials');
+            const subjectsResponse = await api.get('/api/subjects');
+            const learningMaterialsResponse = await api.get('/api/learning-materials',{
+                params: {
+                    subject: true
+                }
+            });
 
-            if (subjectsResponse.status === 200 && learningMaterialsResponse.status === 200) {
-                const subjectData = await subjectsResponse.json();
-                const learningMaterialData = await learningMaterialsResponse.json();
-                setSubject(subjectData.data);
-                setLearningMaterial(learningMaterialData.data);
-                toast.success('Data berhasil dimuat');
-            } else {
-                toast.error('Gagal memuat data');
-            }
+            setSubject(subjectsResponse.data.data);
+            setLearningMaterial(learningMaterialsResponse.data.data);
+            toast.success('Data berhasil dimuat');
         } catch (error) {
-            toast.warning('Terjadi kesalahan jaringan');
-            console.error('Error fetching:', error);
+            toast.error('Gagal memuat data');
+            console.error('Error: ', error);
         } finally {
             setLoading(false);
         }
-    }, [setSubject]);
+    };
 
     useEffect(() => {
         fetchData();
-    }, [fetchData]);
+    }, []);
+
+    if (loading) {
+        return (
+            <div className="flex h-screen items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+        );
+    }
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Pelajaran" />
+            <Head title="Pelajaran - Admin Learning Material Page" />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
                 <Tabs defaultValue="1" className="h-full w-full">
                     <TabsList>
@@ -132,7 +193,7 @@ export default function LearningMaterial() {
                     </TabsContent>
                     <TabsContent value="2" className="h-full w-full">
                         <div className="h-full w-full p-4">
-                            <DataTable columns={columns} data={subject} />
+                            <DataTable columns={subjectColumns} data={subject} />
                         </div>
                     </TabsContent>
                 </Tabs>

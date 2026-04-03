@@ -26,17 +26,19 @@ import React from "react"
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
+  pageSize?: number
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  pageSize = 10,
 }: DataTableProps<TData, TValue>) {
       const [sorting, setSorting] = React.useState<SortingState>([])
 
   const [pagination, setPagination] = React.useState({
   pageIndex: 0,
-  pageSize: 3, // atur jumlah data per halaman
+  pageSize: pageSize,
 });
 
 

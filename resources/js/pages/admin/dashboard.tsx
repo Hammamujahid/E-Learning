@@ -3,6 +3,7 @@
 import SummaryCard from '@/components/summary-card';
 import { DataTable } from '@/components/ui/data-table';
 import AppLayout from '@/layouts/app-layout';
+import { api } from '@/lib/api';
 import { User, type BreadcrumbItem } from '@/types';
 import { Activity, LearningMaterial, Question } from '@/types/interfaces';
 import { Head, Link } from '@inertiajs/react';
@@ -13,12 +14,12 @@ import { toast } from 'sonner';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Dashboard',
+        title: 'Dasbor',
         href: '/dashboard',
     },
 ];
 
-export default function Dashboard() {
+export default function DashboardPage() {
     const [activity, setActivity] = useState<Activity[]>([]);
     const [material, setMaterial] = useState<LearningMaterial[]>([]);
     const [newMaterial, setNewMaterial] = useState(0);
@@ -26,49 +27,35 @@ export default function Dashboard() {
     const [newUser, setNewUser] = useState(0);
     const [question, setQuestion] = useState<Question[]>([]);
     const [newQuestion, setNewQuestion] = useState(0);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [typeFilter, setTypeFilter] = useState<string | null>(null);
     const [open, setOpen] = useState(false);
 
     const fetchData = async () => {
         setLoading(true);
         try {
-            const activityResponse = await fetch('/api/getActivities');
-            const materialResponse = await fetch('/api/getLearningMaterials');
-            const newMaterialResponse = await fetch('/api/getNewLearningMaterials');
-            const userResponse = await fetch('/api/getUsers');
-            const newUserResponse = await fetch('/api/getNewUsers');
-            const questionResponse = await fetch('/api/getQuestions');
-            const newQuestionResponse = await fetch('/api/getNewQuestions');
+            const [activityResponse, materialResponse, newMaterialResponse, userResponse, newUserResponse, questionResponse, newQuestionResponse] =
+                await Promise.all([
+                    api.get('/api/activities'),
+                    api.get('/api/learning-materials'),
+                    api.get('/api/learning-materials/latest'),
+                    api.get('/api/users'),
+                    api.get('/api/users/latest'),
+                    api.get('/api/questions'),
+                    api.get('/api/questions/latest'),
+                ]);
 
-            if (
-                activityResponse.status === 200 &&
-                materialResponse.status === 200 &&
-                newMaterialResponse.status === 200 &&
-                userResponse.status === 200 &&
-                newUserResponse.status == 200 &&
-                questionResponse.status === 200 &&
-                newQuestionResponse.status === 200
-            ) {
-                const activityData = await activityResponse.json();
-                const materialData = await materialResponse.json();
-                const newMaterialData = await newMaterialResponse.json();
-                const userData = await userResponse.json();
-                const newUserData = await newUserResponse.json();
-                const questionData = await questionResponse.json();
-                const newQuestionData = await newQuestionResponse.json();
-                setActivity(activityData.data);
-                setMaterial(materialData.data);
-                setNewMaterial(newMaterialData.data);
-                setUser(userData.data);
-                setNewUser(newUserData.data);
-                setNewQuestion(newQuestionData.data);
-                setQuestion(questionData.data);
-                toast.success('Data berhasil dimuat');
-            }
+            setActivity(activityResponse.data.data);
+            setMaterial(materialResponse.data.data);
+            setNewMaterial(newMaterialResponse.data.data);
+            setUser(userResponse.data.data);
+            setNewUser(newUserResponse.data.data);
+            setNewQuestion(newQuestionResponse.data.data);
+            setQuestion(questionResponse.data.data);
+            toast.success('Data berhasil dimuat');
         } catch (error) {
             toast.error('Gagal memuat data');
-            console.log('Error: ', error);
+            console.error('Error: ', error);
         } finally {
             setLoading(false);
         }
@@ -80,7 +67,6 @@ export default function Dashboard() {
 
     const filteredActivity = typeFilter ? activity.filter((item) => item.type === typeFilter) : activity;
 
-    /* ✅ mapping warna (fix Tailwind dynamic class) */
     const actionStyle: Record<string, string> = {
         created: 'text-green-500 bg-green-500/10',
         updated: 'text-yellow-500 bg-yellow-500/10',
@@ -239,7 +225,7 @@ export default function Dashboard() {
                                                 setTypeFilter(item.value);
                                                 setOpen(false);
                                             }}
-                                            className="block w-full px-3 py-2 text-left hover:bg-muted-foreground/20 text-primary"
+                                            className="block w-full px-3 py-2 text-left text-primary hover:bg-muted-foreground/20"
                                         >
                                             {item.label}
                                         </button>
@@ -248,7 +234,7 @@ export default function Dashboard() {
                             )}
                         </div>
                     </div>
-                    <DataTable columns={activityColumns} data={filteredActivity} />
+                    <DataTable columns={activityColumns} data={filteredActivity} pageSize={3} />
                 </div>
             </div>
         </AppLayout>

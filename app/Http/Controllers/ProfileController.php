@@ -2,64 +2,63 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\profile;
+use App\Models\Profile;
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
 class ProfileController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function index(Request $request)
     {
-        //
+        $profiles = Profile::query();
+
+        $profiles->when(
+            $request->filled('user_id'),
+            fn($q) => $q->where('user_id', $request->user_id)
+        );
+
+        return response()->json(['status' => 200, 'data' => $profiles->get()]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function show($id)
     {
-        //
+        $profile = Profile::findOrFail($id);
+
+        if (!$profile) {
+            return response()->json(['status' => 404, 'message' => 'Profile not found']);
+        }
+
+        return response()->json(['status' => 200, 'data' => $profile]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+    public function update(Request $request, $id)
     {
-        //
+        $profile = Profile::findOrFail($id);
+
+        $validatedData = $request->validate([
+            'city_id' => 'sometimes|required|exists:cities,id',
+            'fullname' => 'sometimes|required|string|max:50',
+            'birth_date' => 'sometimes|required|date',
+            'phone_number' => 'sometimes|required|string|max:15',
+            'gender' => 'sometimes|required|in:male,female',
+            'is_deleted' => 'sometimes|required|boolean',
+        ]);
+
+        $profile->update($validatedData);
+
+        return response()->json(['status' => 200, 'data' => $profile]);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(profile $profile)
+    public function destroy($id)
     {
-        //
-    }
+        $profile = Profile::findOrFail($id);
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(profile $profile)
-    {
-        //
-    }
+        if (!$profile) {
+            return response()->json(['status' => 404, 'message' => 'Profile not found']);
+        }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, profile $profile)
-    {
-        //
-    }
+        $profile->delete();
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(profile $profile)
-    {
-        //
+        return response()->json(['status' => 200, 'message' => 'Profile deleted successfully']);
     }
 }
