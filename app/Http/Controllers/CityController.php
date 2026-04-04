@@ -10,9 +10,17 @@ class CityController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        //
+        $cities = City::query();
+
+        $cities->when(
+            $request->has('is_deleted'),
+            fn($q) => $q->where('is_deleted', $request->boolean('is_deleted')),
+            fn($q) => $q->where('is_deleted', false)
+        );
+
+        return response()->json(['status' => 200, 'data' => $cities->get()]);
     }
 
     /**

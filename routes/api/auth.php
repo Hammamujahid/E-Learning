@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\PasswordResetLinkController;
 use App\Http\Controllers\Api\RegisteredUserController;
 use App\Http\Controllers\Api\VerifyEmailController;
 use App\Http\Controllers\Api\NewPasswordController;
+use App\Http\Controllers\Api\PasswordController;
 
 Route::middleware('guest')->group(function () {
     Route::post('register', [RegisteredUserController::class, 'store']);
@@ -22,4 +23,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('email/verification-notification', [EmailVerificationNotificationController::class, 'store'])->middleware('throttle:6,1');
     Route::post('confirm-password', [ConfirmablePasswordController::class, 'store']);
     Route::post('logout', [AuthenticatedTokenController::class, 'destroy']);
+    Route::patch('update-password', [PasswordController::class, 'update'])->name('password.update');
 });

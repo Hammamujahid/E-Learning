@@ -12,6 +12,15 @@ Route::get('/settings/profile', function(){
     return Inertia::render('settings/profile');
 })->name('settings.profile');
 
+Route::get('/settings/password', function(){
+    return Inertia::render('settings/password');
+})->name('settings.password');
+
+Route::get('/settings/appearance', function(){
+    return Inertia::render('settings/appearance');
+})->name('settings.appearance');
+
+
 Route::get('/auth/login', function () {
     return Inertia::render('auth/login');
 })->name('login');

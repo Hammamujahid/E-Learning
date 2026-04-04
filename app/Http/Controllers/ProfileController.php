@@ -46,7 +46,11 @@ class ProfileController extends Controller
 
         $profile->update($validatedData);
 
-        return response()->json(['status' => 200, 'data' => $profile]);
+        $profile->user->update(['name' => $request->name]);
+
+        return response()->json([
+            'data' => $profile->load('user'),
+        ]);
     }
 
     public function destroy($id)

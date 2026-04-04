@@ -2,7 +2,7 @@
 import { type BreadcrumbItem } from '@/types';
 import { Transition } from '@headlessui/react';
 import { Head, Link } from '@inertiajs/react';
-import { FormEventHandler, useCallback, useEffect, useState } from 'react';
+import { FormEventHandler, useCallback, useEffect, useMemo, useState } from 'react';
 
 import DeleteUser from '@/components/delete-user';
 import HeadingSmall from '@/components/heading-small';
@@ -15,7 +15,7 @@ import AppLayout from '@/layouts/app-layout';
 import SettingsLayout from '@/layouts/settings/layout';
 import { api } from '@/lib/api';
 import { getUser, setUser } from '@/lib/auth';
-import { Profile } from '@/types/interfaces';
+import { City, Profile } from '@/types/interfaces';
 import { AxiosError } from 'axios';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -27,71 +27,95 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
+
 export default function ProfilePage({ mustVerifyEmail, status }: { mustVerifyEmail: boolean; status?: string }) {
-    const user = getUser();
+    const [user] = useState(() => getUser());
     const [recentlySuccessful, setRecentlySuccessful] = useState(false);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [profile, setProfile] = useState<Profile | null>(null);
+    const [original, setOriginal] = useState<Profile | null>(null);
+    const [originalName, setOriginalName] = useState(user?.name || '');
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
     const [name, setName] = useState(user?.name || '');
+    const [cities, setCities] = useState<City[]>([]);
+    const [loadingCities, setLoadingCities] = useState(true);
+
     const fetchProfile = useCallback(async () => {
         setLoading(true);
         try {
-            const response = await api.get(`/api/profiles`, {
-                params: {
-                    user_id: user?.id,
-                },
+            const response = await api.get('/api/profiles', {
+                params: { user_id: user?.id },
             });
             const data = response.data.data[0];
             setProfile(data);
-            toast.success('Profile loaded');
+            setOriginal(data);
         } catch (error) {
-            toast.error('Failed to load profile');
             console.error('Error loading profile:', error);
+            toast.error('Gagal memuat profil');
         } finally {
             setLoading(false);
         }
     }, [user?.id]);
 
+    const fetchCities = useCallback(async () => {
+        setLoadingCities(true);
+        try {
+            const response = await api.get('/api/cities');
+            setCities(response.data.data);
+        } catch (error) {
+            console.error('Error loading cities:', error);
+            toast.error('Gagal memuat data kota');
+        } finally {
+            setLoadingCities(false);
+        }
+    }, []);
+
     useEffect(() => {
         fetchProfile();
-    }, [fetchProfile]);
+        fetchCities();
+    }, [fetchProfile, fetchCities]);
 
-    if (loading || !profile) {
+    // Cek apakah ada perubahan data
+    const isDirty = useMemo(() => {
+        if (!profile || !original) return false;
         return (
-            <div className="flex h-screen items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
+            name !== originalName ||
+            profile.fullname !== original.fullname ||
+            profile.birth_date !== original.birth_date ||
+            profile.phone_number !== original.phone_number ||
+            profile.gender !== original.gender ||
+            profile.city_id !== original.city_id
         );
-    }
+    }, [name, originalName, profile, original]);
 
     const handleChange = (field: keyof Profile, value: any) => {
-        setProfile((prev) => ({
-            ...prev!,
-            [field]: value,
-        }));
+        setProfile((prev) => ({ ...prev!, [field]: value }));
+        // Reset error field saat user mulai mengetik
+        setErrors((prev) => ({ ...prev, [field]: '' }));
     };
 
     const submit: FormEventHandler = async (e) => {
         e.preventDefault();
+        if (!isDirty) return;
         setSaving(true);
+
         try {
-            await api.put(`/api/profiles/${profile.id}`, {
-                fullname: profile.fullname,
-                birth_date: profile.birth_date,
-                phone_number: profile.phone_number,
-                gender: profile.gender,
-                is_deleted: false,
+            const response = await api.put(`/api/profiles/${profile?.id}`, {
+                name,
+                fullname: profile?.fullname,
+                birth_date: profile?.birth_date,
+                phone_number: profile?.phone_number,
+                gender: profile?.gender,
+                city_id: profile?.city_id,
             });
 
-            // 🟢 update user name
-            const userRes = await api.put(`/api/users/${user?.id}`, {
-                name: name,
-            });
+            const updated = response.data.data;
+            setUser(updated.user);
+            setProfile(updated);
+            setOriginal(updated);
+            setOriginalName(name);
 
-            // update local user
-            setUser(userRes.data.data);
             setRecentlySuccessful(true);
             toast.success('Profil berhasil diperbarui');
             setTimeout(() => setRecentlySuccessful(false), 2000);
@@ -104,6 +128,7 @@ export default function ProfilePage({ mustVerifyEmail, status }: { mustVerifyEma
                 if (validationErrors.birth_date) setErrors((prev) => ({ ...prev, birth_date: validationErrors.birth_date[0] }));
                 if (validationErrors.phone_number) setErrors((prev) => ({ ...prev, phone_number: validationErrors.phone_number[0] }));
                 if (validationErrors.gender) setErrors((prev) => ({ ...prev, gender: validationErrors.gender[0] }));
+                if (validationErrors.city_id) setErrors((prev) => ({ ...prev, city_id: validationErrors.city_id[0] }));
             } else {
                 toast.error('Gagal memperbarui profil. Coba lagi nanti.');
             }
@@ -112,43 +137,56 @@ export default function ProfilePage({ mustVerifyEmail, status }: { mustVerifyEma
         }
     };
 
+    if (loading || !profile) {
+        return (
+            <div className="flex h-screen items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+        );
+    }
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Profile settings" />
 
             <SettingsLayout>
                 <div className="space-y-6">
-                    <HeadingSmall title="Profile information" description="Update your name and email address" />
+                    <HeadingSmall title="Profile information" description="Update your profile information" />
 
                     <form onSubmit={submit} className="space-y-6">
+                        {/* Name */}
                         <div className="grid gap-2">
                             <Label htmlFor="name">Name</Label>
                             <Input
                                 id="name"
                                 className="mt-1 block w-full"
                                 value={name}
-                                onChange={(e) => setName(e.target.value)}
+                                onChange={(e) => {
+                                    setName(e.target.value);
+                                    setErrors((prev) => ({ ...prev, name: '' }));
+                                }}
                                 required
                                 autoComplete="name"
-                                placeholder="Full name"
+                                placeholder="Name"
                             />
                             <InputError className="mt-2" message={errors.name} />
                         </div>
 
+                        {/* Full name */}
                         <div className="grid gap-2">
-                            <Label htmlFor="name">Full name</Label>
+                            <Label htmlFor="fullname">Full name</Label>
                             <Input
                                 id="fullname"
                                 className="mt-1 block w-full"
                                 value={profile.fullname || ''}
                                 onChange={(e) => handleChange('fullname', e.target.value)}
-                                required
-                                autoComplete="fullname"
+                                autoComplete="name"
                                 placeholder="Full name"
                             />
                             <InputError className="mt-2" message={errors.fullname} />
                         </div>
 
+                        {/* Birth date */}
                         <div className="grid gap-2">
                             <Label htmlFor="birth_date">Birth date</Label>
                             <Input
@@ -162,6 +200,7 @@ export default function ProfilePage({ mustVerifyEmail, status }: { mustVerifyEma
                             <InputError className="mt-2" message={errors.birth_date} />
                         </div>
 
+                        {/* Phone number */}
                         <div className="grid gap-2">
                             <Label htmlFor="phone_number">Phone number</Label>
                             <Input
@@ -176,9 +215,10 @@ export default function ProfilePage({ mustVerifyEmail, status }: { mustVerifyEma
                             <InputError className="mt-2" message={errors.phone_number} />
                         </div>
 
+                        {/* Gender */}
                         <div className="grid gap-2">
                             <Label htmlFor="gender">Gender</Label>
-                            <Select value={profile.gender} onValueChange={(val) => handleChange('gender', val)}>
+                            <Select value={profile.gender || ''} onValueChange={(val) => handleChange('gender', val)}>
                                 <SelectTrigger id="gender" className="mt-1 w-full">
                                     <SelectValue placeholder="Select gender" />
                                 </SelectTrigger>
@@ -188,6 +228,35 @@ export default function ProfilePage({ mustVerifyEmail, status }: { mustVerifyEma
                                 </SelectContent>
                             </Select>
                             <InputError className="mt-2" message={errors.gender} />
+                        </div>
+
+                        {/* City */}
+                        <div className="grid gap-2">
+                            <Label htmlFor="city">City</Label>
+                            <Select
+                                value={profile.city_id ? String(profile.city_id) : ''}
+                                onValueChange={(val) => handleChange('city_id', Number(val))}
+                                disabled={loadingCities}
+                            >
+                                <SelectTrigger id="city" className="mt-1 w-full">
+                                    {loadingCities ? (
+                                        <span className="flex items-center gap-2 text-muted-foreground">
+                                            <Loader2 className="h-3 w-3 animate-spin" />
+                                            Memuat kota...
+                                        </span>
+                                    ) : (
+                                        <SelectValue placeholder="Pilih kota" />
+                                    )}
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {cities.map((city) => (
+                                        <SelectItem key={city.id} value={String(city.id)}>
+                                            {city.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <InputError className="mt-2" message={errors.city_id} />
                         </div>
 
                         {mustVerifyEmail && user?.email_verified_at === null && (
@@ -203,7 +272,6 @@ export default function ProfilePage({ mustVerifyEmail, status }: { mustVerifyEma
                                         Click here to resend the verification email.
                                     </Link>
                                 </p>
-
                                 {status === 'verification-link-sent' && (
                                     <div className="mt-2 text-sm font-medium text-green-600">
                                         A new verification link has been sent to your email address.
@@ -213,7 +281,11 @@ export default function ProfilePage({ mustVerifyEmail, status }: { mustVerifyEma
                         )}
 
                         <div className="flex items-center gap-4">
-                            <Button disabled={saving}>Save</Button>
+                            {/* Tombol hanya aktif jika ada perubahan */}
+                            <Button type="submit" disabled={saving || !isDirty}>
+                                {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Save
+                            </Button>
 
                             <Transition
                                 show={recentlySuccessful}

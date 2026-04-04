@@ -56,14 +56,19 @@ export interface Profile {
         name: string;
         email: string;
     }
-    city?: {
-        id: number;
-        name: string;
-    }
+    city_id: number
     fullname: string;
     birth_date: string;
     phone_number: string;
     gender: string;
+    created_at: string;
+    updated_at: string;
+    is_deleted: boolean;
+}
+
+export interface City {
+    id: number;
+    name: string;
     created_at: string;
     updated_at: string;
     is_deleted: boolean;
