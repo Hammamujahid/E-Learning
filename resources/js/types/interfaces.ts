@@ -55,8 +55,12 @@ export interface Profile {
         id: number;
         name: string;
         email: string;
+        role: string;
+        created_at: string;
+        updated_at: string;
     }
-    city_id: number
+    city_id: number;
+    city?: City | null;
     fullname: string;
     birth_date: string;
     phone_number: string;

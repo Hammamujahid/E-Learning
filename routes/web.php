@@ -8,18 +8,29 @@ Route::get('/', function () {
 })->name('home');
 
 
-Route::get('/settings/profile', function(){
+Route::get('/settings/profile', function () {
     return Inertia::render('settings/profile');
 })->name('settings.profile');
 
-Route::get('/settings/password', function(){
+Route::get('/settings/password', function () {
     return Inertia::render('settings/password');
 })->name('settings.password');
 
-Route::get('/settings/appearance', function(){
+Route::get('/settings/appearance', function () {
     return Inertia::render('settings/appearance');
 })->name('settings.appearance');
 
+Route::get('/profile/{id}', function ($id) {
+    return Inertia::render('profile/detail', [
+        'id' => $id,
+    ]);
+});
+
+Route::get('/profile/edit/{id}', function ($id) {
+    return Inertia::render('profile/edit', [
+        'id' => $id,
+    ]);
+});
 
 Route::get('/auth/login', function () {
     return Inertia::render('auth/login');
@@ -56,4 +67,3 @@ Route::get('/teacher/overview', function () {
 Route::get('/user/overview', function () {
     return Inertia::render('user/overview');
 });
-

@@ -17,7 +17,8 @@ class profile extends Model
         'fullname',
         'birth_date',
         'phone_number',
-        'gender'
+        'gender',
+        'is_deleted'
     ];
 
     public function user(): BelongsTo

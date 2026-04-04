@@ -11,22 +11,22 @@ import { clearAuth, getUser, redirectToLogin } from '@/lib/auth';
 
 const adminNavItems: NavItem[] = [
     {
-        title: 'Dashboard',
+        title: 'Dasbor',
         href: '/admin/dashboard',
         icon: LayoutDashboard,
     },
     {
-        title: 'User',
+        title: 'Pengguna',
         href: '/admin/user',
         icon: Users,
     },
     {
-        title: 'Material',
+        title: 'Pelajaran',
         href: '/admin/learning-material',
         icon: BookOpen,
     },
     {
-        title: 'Question',
+        title: 'Soal',
         href: '/admin/question',
         icon: SquarePen,
     }
