@@ -1,6 +1,8 @@
 'use client';
 
+import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import AppLayout from '@/layouts/app-layout';
 import { api } from '@/lib/api';
 import { type BreadcrumbItem } from '@/types';
@@ -10,10 +12,11 @@ import { ColumnDef } from '@tanstack/react-table';
 import { Eye, Loader2, RefreshCcw, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import CreateUser from '../profile/create';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'User',
+        title: 'Pengguna',
         href: '/user',
     },
 ];
@@ -21,6 +24,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 export default function UserPage() {
     const [user, setUser] = useState<Profile[]>([]);
     const [loading, setLoading] = useState(true);
+    const [open, setOpen] = useState(false);
 
     const columns: ColumnDef<Profile>[] = [
         {
@@ -76,13 +80,9 @@ export default function UserPage() {
 
                 return (
                     <div className="text-center">
-                        <span
-                            className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${
-                                isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                            }`}
-                        >
+                        <Badge className={`${isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                             {isActive ? 'Aktif' : 'Non-aktif'}
-                        </span>
+                        </Badge>
                     </div>
                 );
             },
@@ -159,8 +159,7 @@ export default function UserPage() {
                     if (!confirm('Yakin ingin hapus pengguna ini?')) return;
 
                     try {
-                        await api.delete(`/api/profiles/${id}`);
-                        await api.delete(`/api/users/${userId}`)
+                        await api.delete(`/api/users/${userId}`);
 
                         toast.success('User berhasil dihapus');
 
@@ -175,7 +174,7 @@ export default function UserPage() {
                     <div className="flex items-center justify-center gap-2">
                         {/* Detail */}
                         <Link href={`/profile/${id}`}>
-                            <div className="rounded-md bg-blue-100 p-2 text-blue-600 transition hover:bg-blue-200" title="Lihat Detail">
+                            <div className="cursor-ponter rounded-md bg-blue-100 p-2 text-blue-600 transition hover:bg-blue-200" title="Lihat Detail">
                                 <Eye size={16} />
                             </div>
                         </Link>
@@ -184,7 +183,7 @@ export default function UserPage() {
                         {row.original.is_deleted === false ? (
                             <button
                                 onClick={handleDeactived}
-                                className="rounded-md bg-red-100 p-2 text-red-600 transition hover:bg-red-200"
+                                className="cursor-pointer rounded-md bg-red-100 p-2 text-red-600 transition hover:bg-red-200"
                                 title="Nonaktifkan"
                             >
                                 <Trash2 size={16} />
@@ -193,14 +192,14 @@ export default function UserPage() {
                             <div className="flex items-center justify-center gap-2">
                                 <button
                                     onClick={handleActived}
-                                    className="rounded-md bg-green-100 p-2 text-green-600 transition hover:bg-green-200"
+                                    className="cursor-pointer rounded-md bg-green-100 p-2 text-green-600 transition hover:bg-green-200"
                                     title="Aktifkan"
                                 >
                                     <RefreshCcw size={16} />
                                 </button>
                                 <button
                                     onClick={handleDelete}
-                                    className="rounded-md bg-red-100 p-2 text-red-600 transition hover:bg-red-200"
+                                    className="cursor-pointer rounded-md bg-red-100 p-2 text-red-600 transition hover:bg-red-200"
                                     title="Hapus"
                                 >
                                     <Trash2 size={16} />
@@ -246,8 +245,33 @@ export default function UserPage() {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="User - Admin User Page" />
+            <Head title="Daftar Pengguna" />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+                <div className="flex items-center justify-between">
+                    <h1 className="text-2xl font-bold text-primary">Daftar Pengguna</h1>
+                    <Dialog open={open} onOpenChange={setOpen}>
+                        <DialogTrigger asChild>
+                            <button className="mr-8 cursor-pointer rounded-lg bg-green-600 px-4 py-2 font-medium text-foreground shadow-md transition hover:font-normal hover:shadow-transparent">
+                                + Tambah User
+                            </button>
+                        </DialogTrigger>
+
+                        <DialogContent className="flex max-h-[80vh] flex-col">
+                            <DialogHeader>
+                                <DialogTitle>Tambah User</DialogTitle>
+                            </DialogHeader>
+
+                            <div className="flex-1 overflow-y-auto px-4">
+                                <CreateUser
+                                    onSuccess={() => {
+                                        setOpen(false);
+                                        fetchUser();
+                                    }}
+                                />
+                            </div>
+                        </DialogContent>
+                    </Dialog>
+                </div>
                 <DataTable columns={columns} data={user} />
             </div>
         </AppLayout>

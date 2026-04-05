@@ -17,7 +17,6 @@ class SubjectController extends Controller
         $subjects->when(
             request()->has('is_deleted'),
             fn($q) => $q->where('is_deleted', request()->boolean('is_deleted')),
-            fn($q) => $q->where('is_deleted', false)
         );
 
         return response()->json([
@@ -36,15 +35,37 @@ class SubjectController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'is_deleted' => ['nullable', 'boolean'],
+
+        ]);
+
+        $subject = Subject::create(
+            [
+                'name' => $request->name,
+                'is_deleted' => $request->is_deleted
+            ]
+        );
+
+        return response()->json([
+            'status' => 200,
+            'data' => $subject
+        ]);
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show($id)
     {
-        //
+        $subject = Subject::findOrFail($id);
+
+
+        return response()->json([
+            'status' => 200,
+            'data' => $subject
+        ]);
     }
 
     /**
@@ -58,16 +79,29 @@ class SubjectController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, $id)
     {
-        //
+        $subject = Subject::findOrFail($id);
+
+        $validatedData = $request->validate([
+            'name' => 'sometimes|required|string|max:20',
+            'is_deleted'  => 'sometimes|boolean',
+        ]);
+
+        $subject->update($validatedData);
+
+        return response()->json(['status' => 200, 'data' => $subject]);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy($id)
     {
-        //
+        $subject = Subject::findOrFail($id);
+
+        $subject->delete();
+
+        return response()->json(['status' => 200, 'message' => 'Subject deleted successfully']);
     }
 }

@@ -32,6 +32,19 @@ Route::get('/profile/edit/{id}', function ($id) {
     ]);
 });
 
+Route::get('/learning-material/{id}', function ($id) {
+    return Inertia::render('learning-material/detail', [
+        'id' => $id,
+    ]);
+});
+
+Route::get('/learning-material/edit/{id}', function ($id) {
+    return Inertia::render('learning-material/edit', [
+        'id' => $id,
+    ]);
+});
+
+
 Route::get('/auth/login', function () {
     return Inertia::render('auth/login');
 })->name('login');
@@ -54,8 +67,8 @@ Route::get('/admin/learning-material', function () {
     return Inertia::render('admin/learning-material');
 });
 
-Route::get('/admin/question', function () {
-    return Inertia::render('admin/question');
+Route::get('/admin/other', function () {
+    return Inertia::render('admin/other');
 });
 
 //Teacher Routes

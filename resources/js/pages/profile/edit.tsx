@@ -9,7 +9,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Pengguna', href: '/admin/user' },
+    { title: 'Daftar Pengguna', href: '/admin/user' },
     { title: 'Edit Profil', href: '' },
 ];
 
@@ -151,7 +151,7 @@ export default function EditProfile() {
                 <div className="flex items-center justify-between">
                     <h1 className="text-xl font-medium text-primary">Edit Profil</h1>
                     <Link href={`/profile/${id}`}>
-                        <button className="flex items-center gap-1.5 bg-background px-3 py-1.5 text-sm text-primary hover:cursor-pointer hover:text-blue-600">
+                        <button className="cursor-pointer flex items-center gap-1.5 bg-background px-3 py-1.5 text-sm text-primary hover:cursor-pointer hover:text-blue-600">
                             ← Kembali
                         </button>
                     </Link>

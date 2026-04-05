@@ -4,7 +4,7 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { User, type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { BookOpen, LayoutDashboard, SquarePen, TableOfContents, Users } from 'lucide-react';
+import { BookOpen, LayoutDashboard, TableOfContents, Users, TableProperties } from 'lucide-react';
 import AppLogo from './app-logo';
 import { useEffect, useState } from 'react';
 import { clearAuth, getUser, redirectToLogin } from '@/lib/auth';
@@ -21,14 +21,14 @@ const adminNavItems: NavItem[] = [
         icon: Users,
     },
     {
-        title: 'Pelajaran',
+        title: 'Materi',
         href: '/admin/learning-material',
         icon: BookOpen,
     },
     {
-        title: 'Soal',
-        href: '/admin/question',
-        icon: SquarePen,
+        title: 'Lainnya',
+        href: '/admin/other',
+        icon: TableProperties,
     }
 ];
 

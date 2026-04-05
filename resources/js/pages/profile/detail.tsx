@@ -9,7 +9,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Pengguna', href: '/admin/user' },
+    { title: 'Daftar Pengguna', href: '/admin/user' },
     { title: 'Detail Profil', href: '' },
 ];
 
@@ -24,7 +24,7 @@ function InfoRow({ label, value }: { label: string; value?: string | null }) {
     );
 }
 
-export default function Detail() {
+export default function DetailUser() {
     const { id } = usePage<{ id: number }>().props;
     const [profile, setProfile] = useState<Profile | null>(null);
     const [loading, setLoading] = useState(true);
@@ -103,7 +103,7 @@ export default function Detail() {
                         </div>
                     </div>
                     <Link href={`/profile/edit/${id}`}>
-                        <button className="rounded-lg border border-yellow-200 bg-yellow-50 px-3 py-1.5 text-sm text-yellow-700 transition hover:bg-yellow-100">
+                        <button className="cursor-pointer rounded-lg border border-yellow-200 bg-yellow-50 px-3 py-1.5 text-sm text-yellow-700 transition hover:bg-yellow-100">
                             Edit Profil
                         </button>
                     </Link>
