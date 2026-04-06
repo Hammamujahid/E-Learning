@@ -97,7 +97,7 @@ export default function EditLearningMaterial() {
 
         try {
             const formData = new FormData();
-            formData.append('_method', 'PUT');
+            formData.append('_method', 'PATCH');
             formData.append('name', name);
             formData.append('description', description || '');
             if (subjectId) formData.append('subject_id', String(subjectId));

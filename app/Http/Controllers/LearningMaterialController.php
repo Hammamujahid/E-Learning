@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\LearningMaterial;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
+use Illuminate\Support\Str;
 
 class LearningMaterialController extends Controller
 {
@@ -52,7 +54,45 @@ class LearningMaterialController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'subject_id'  => 'required|exists:subjects,id',
+            'name'        => 'required|string|max:50',
+            'description' => 'nullable|string|max:255',
+            'file'        => 'nullable|file|mimes:pdf,doc,docx,ppt,pptx,xls,xlsx|max:20480',
+        ]);
+
+        $data = [
+            'subject_id'  => $request->subject_id,
+            'name'        => $request->name,
+            'description' => $request->description,
+            'created_by'  => $request->user()->name ?? 'system',
+            'is_deleted'  => false,
+        ];
+
+        if ($request->hasFile('file')) {
+            try {
+                $uploadedFile = Cloudinary::uploadApi()->upload(
+                    $request->file('file')->getRealPath(),
+                    [
+                        'folder' => 'e-learning',
+                        'resource_type' => 'auto',
+                        'public_id' => Str::slug($request->name) . '-materi' . time()
+                    ]
+                );
+                $data['file_path'] = $uploadedFile['secure_url'];
+                $data['public_id'] = $uploadedFile['public_id'];
+            } catch (\Exception $e) {
+                return response()->json([
+                    'message' => 'Gagal upload file: ' . $e->getMessage()
+                ], 500);
+            }
+        }
+
+        $learningMaterial = LearningMaterial::create($data);
+
+        return response()->json([
+            'data' => $learningMaterial->load('subject'),
+        ], 201);
     }
 
     /**
@@ -105,22 +145,44 @@ class LearningMaterialController extends Controller
         $data = $request->only(['subject_id', 'name', 'created_by', 'description', 'is_deleted']);
 
         if ($request->boolean('remove_file') && $learningMaterial->file_path) {
-            Storage::disk('public')->delete($learningMaterial->file_path);
-            $data['file_path'] = null;
+            Cloudinary::uploadApi()->destroy($learningMaterial->public_id, [
+                'resource_type' => 'raw',
+            ]);
+            $data = array_merge([
+                'file_path' => null,
+                'public_id' => null
+            ]);
         }
 
         if ($request->hasFile('file')) {
             if ($learningMaterial->file_path) {
-                Storage::disk('public')->delete($learningMaterial->file_path);
+                Cloudinary::uploadApi()->destroy($learningMaterial->public_id, [
+                    'resource_type' => 'raw',
+                ]);
             }
-            $data['file_path'] = $request->file('file')->store('learning-materials', 'public');
+            try {
+                $uploadedFile = Cloudinary::uploadApi()->upload(
+                    $request->file('file')->getRealPath(),
+                    [
+                        'folder' => 'e-learning',
+                        'resource_type' => 'auto',
+                        'public_id' => Str::slug($request->name) . '-materi' . time()
+                    ]
+                );
+                $data['file_path'] = $uploadedFile['secure_url'];
+                $data['public_id'] = $uploadedFile['public_id'];
+            } catch (\Exception $e) {
+                return response()->json([
+                    'message' => 'Gagal upload file: ' . $e->getMessage()
+                ], 500);
+            }
         }
 
         $learningMaterial->update($data);
 
         return response()->json([
             'data' => $learningMaterial->load('subject'),
-        ]);
+        ], 201);
     }
 
     /**

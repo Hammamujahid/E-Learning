@@ -12,6 +12,7 @@ import { ColumnDef } from '@tanstack/react-table';
 import { Eye, Loader2, RefreshCcw, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import CreateMaterial from '../learning-material/create';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -255,12 +256,12 @@ export default function LearningMaterialPage() {
                             </DialogHeader>
 
                             <div className="flex-1 overflow-y-auto px-4">
-                                {/* <CreateUser
+                                <CreateMaterial
                                     onSuccess={() => {
                                         setOpen(false);
-                                        fetchUser();
+                                        fetchData();
                                     }}
-                                /> */}
+                                />
                             </div>
                         </DialogContent>
                     </Dialog>

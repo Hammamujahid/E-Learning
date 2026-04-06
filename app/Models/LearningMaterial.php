@@ -18,6 +18,7 @@ class LearningMaterial extends Model
         'name',
         'description',
         'file_path',
+        'public_id',
         'is_deleted'
     ];
 
