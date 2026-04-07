@@ -8,6 +8,9 @@ use App\Http\Middleware\RoleMiddleware;
 Route::get('/questions', [QuestionController::class, 'index']);
 
 Route::middleware(['auth:sanctum', RoleMiddleware::class . ':admin'])->group(function () {
-
     Route::get('/questions/latest', [QuestionController::class, 'latest']);
+    Route::post('/question', [QuestionController::class, 'store']);
+    Route::get('/questions/{id}', [QuestionController::class, 'show']);
+    Route::patch('/questions/{id}', [QuestionController::class, 'update']);
+    Route::delete('/questions/{id}', [QuestionController::class, 'destroy']);
 });

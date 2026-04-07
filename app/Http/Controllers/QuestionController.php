@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\question;
 use Illuminate\Http\Request;
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
+use Illuminate\Support\Str;
 
 class QuestionController extends Controller
 {
@@ -37,7 +39,44 @@ class QuestionController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'learning_material_id' => 'required|exists:learning_materials,id',
+            'media' => 'nullable|image|mimes:png,jpg,jpeg,svg,webp|max:2048',
+            'question_text' => 'required|string|max:1000',
+            'created_by' => 'required|string|max:255'
+        ]);
+
+        $data = [
+            'learning_material_id' => $request->learning_material_id,
+            'question_text' => $request->question_text,
+            'created_by' => $request->created_by,
+            'is_deleted' => false
+        ];
+
+        if ($request->has('media')) {
+            try {
+                $uploadImage = Cloudinary::uploadApi()->upload(
+                    $request->image('media')->getRealPath(),
+                    [
+                        'folder' => 'e-learning',
+                        'resoure_type' => 'auto',
+                        'public_id' => $request->learning_materia_id . '-soal' . time()
+                    ]
+                );
+                $data['media_path'] = $uploadImage['secure_url'];
+                $data['public_id'] = $uploadImage['public_id'];
+            } catch (\Exception $e) {
+                return response()->json([
+                    'message' => 'Gagal upload image: ' . $e->getMessage()
+                ], 500);
+            }
+        }
+
+        $question = Question::create($data);
+
+        return response()->json([
+            'data' => $question->load('subject'),
+        ], 201);
     }
 
     /**
