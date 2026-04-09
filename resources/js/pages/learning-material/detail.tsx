@@ -25,8 +25,10 @@ function MetaBadge({ icon, label }: { icon: React.ReactNode; label: string }) {
 }
 
 function DocumentViewer({ filePath }: { filePath: string }) {
-    const ext = filePath.split('.').pop()?.toLowerCase();
-    const fileUrl = `http://localhost:8000/storage/${filePath}`;
+    const fixedUrl = filePath.replace('/image/upload/', '/raw/upload/');
+
+    const ext = fixedUrl.split('?')[0].split('.').pop()?.toLowerCase();
+    const fileUrl = fixedUrl;
 
     if (ext === 'pdf') {
         return <iframe src={fileUrl} className="h-[600px] w-full rounded-lg border border-border/20" title="Document Viewer" />;
@@ -169,7 +171,7 @@ export default function Detail() {
                             <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${extColor}`}>{fileExt}</span>
                             <span className="max-w-[200px] truncate text-xs text-muted-foreground">{fileName}</span>
                             <a
-                                href={`http://localhost:8000/storage/${filePath}`}
+                                href={filePath}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="rounded-md border border-border/30 px-2.5 py-1 text-xs transition hover:bg-muted"

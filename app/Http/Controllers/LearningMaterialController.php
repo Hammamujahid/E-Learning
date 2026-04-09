@@ -71,12 +71,16 @@ class LearningMaterialController extends Controller
 
         if ($request->hasFile('file')) {
             try {
+                $originalName = pathinfo(
+                    $request->file('file')->getClientOriginalName(),
+                    PATHINFO_FILENAME
+                );
                 $uploadedFile = Cloudinary::uploadApi()->upload(
                     $request->file('file')->getRealPath(),
                     [
                         'folder' => 'e-learning',
-                        'resource_type' => 'auto',
-                        'public_id' => Str::slug($request->name) . '-materi' . time()
+                        'resource_type' => 'raw',
+                        'public_id'     => Str::slug($originalName) . '-' . time()
                     ]
                 );
                 $data['file_path'] = $uploadedFile['secure_url'];
@@ -148,9 +152,9 @@ class LearningMaterialController extends Controller
             Cloudinary::uploadApi()->destroy($learningMaterial->public_id, [
                 'resource_type' => 'raw',
             ]);
-            $data = array_merge([
+            $data = array_merge($data, [
                 'file_path' => null,
-                'public_id' => null
+                'public_id' => null,
             ]);
         }
 
@@ -161,12 +165,16 @@ class LearningMaterialController extends Controller
                 ]);
             }
             try {
+                $originalName = pathinfo(
+                    $request->file('file')->getClientOriginalName(),
+                    PATHINFO_FILENAME
+                );
                 $uploadedFile = Cloudinary::uploadApi()->upload(
                     $request->file('file')->getRealPath(),
                     [
                         'folder' => 'e-learning',
-                        'resource_type' => 'auto',
-                        'public_id' => Str::slug($request->name) . '-materi' . time()
+                        'resource_type' => 'raw',
+                        'public_id'     => Str::slug($originalName) . '-' . time()
                     ]
                 );
                 $data['file_path'] = $uploadedFile['secure_url'];

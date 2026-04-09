@@ -12,10 +12,24 @@ class QuestionController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $questions = question::where('is_deleted', false)->get();
-        return response()->json(['status' => 200, 'data' => $questions]);
+        $questions = Question::query();
+
+        $questions->when(
+            $request->has('is_deleted'),
+            fn($q) => $q->where('is_deleted', $request->boolean('is_deleted')),
+        );
+
+        $questions->when(
+            $request->has('learning_material_id'),
+            fn($q) => $q->where('learning_materia_id', $request->learning_material_id)
+        );
+
+        return response()->json([
+            'status' => 200,
+            'data' => $questions->get()
+        ]);
     }
 
     public function latest()
