@@ -28,15 +28,37 @@ class QuizAttemptController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'learning_material_id' => 'required|exists:learning_materials,id',
+            'user_id'              => 'required|exists:users,id',
+            'score'                => 'required|numeric|min:0|max:100',
+        ]);
+
+        $data = [
+            'learning_material_id' => $request->learning_material_id,
+            'user_id'              => $request->user_id,
+            'score'                => $request->score,
+            'is_deleted'            => false,
+        ];
+
+        $quizAttempt = quiz_attempt::create($data);
+        return response()->json(['status' => 200, 'data' => $quizAttempt]);
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(quiz_attempt $quiz_attempt)
+    public function show($id)
     {
-        //
+        $query = quiz_attempt::query();
+
+        $quiz_attempt = $query->findOrFail($id);
+
+
+        return response()->json([
+            'status' => 200,
+            'data' => $quiz_attempt
+        ]);
     }
 
     /**

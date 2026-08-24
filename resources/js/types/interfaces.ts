@@ -89,3 +89,13 @@ export interface City {
     updated_at: string;
     is_deleted: boolean;
 }
+
+export interface QuizAttempt {
+    id: number;
+    user_id: number;
+    learning_material_id: number;
+    score: number;
+    created_at: string;
+    updated_at: string;
+    is_deleted: boolean;
+}

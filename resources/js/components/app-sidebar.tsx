@@ -2,12 +2,12 @@ import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
+import { clearAuth, getUser, redirectToLogin } from '@/lib/auth';
 import { User, type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { BookOpen, LayoutDashboard, TableOfContents, Users, TableProperties } from 'lucide-react';
-import AppLogo from './app-logo';
+import { BookOpen, LayoutDashboard, TableOfContents, TableProperties, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { clearAuth, getUser, redirectToLogin } from '@/lib/auth';
+import AppLogo from './app-logo';
 
 const adminNavItems: NavItem[] = [
     {
@@ -29,7 +29,7 @@ const adminNavItems: NavItem[] = [
         title: 'Lainnya',
         href: '/admin/other',
         icon: TableProperties,
-    }
+    },
 ];
 
 const teacherNavItems: NavItem[] = [
@@ -45,6 +45,11 @@ const userNavItems: NavItem[] = [
         title: 'Overview',
         href: '/user/overview',
         icon: TableOfContents,
+    },
+    {
+        title: 'Mata pelajaran',
+        href: '/user/learning-material',
+        icon: BookOpen,
     },
 ];
 
@@ -62,7 +67,7 @@ const footerNavItems: NavItem[] = [
 ];
 
 export function AppSidebar() {
-  const [user, setUser] = useState<User | null>(null);
+    const [user, setUser] = useState<User | null>(null);
 
     useEffect(() => {
         const u = getUser();

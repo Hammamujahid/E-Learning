@@ -14,3 +14,7 @@ Route::middleware(['auth:sanctum', RoleMiddleware::class . ':admin'])->group(fun
     Route::patch('/learning-materials/{id}', [LearningMaterialController::class, 'update']);
     Route::delete('/learning-materials/{id}', [LearningMaterialController::class, 'destroy']);
 });
+
+Route::middleware(['auth:sanctum', RoleMiddleware::class . ':user'])->group(function () {
+    Route::get('/learning-materials/{id}', [LearningMaterialController::class, 'show']);
+});

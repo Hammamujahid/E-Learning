@@ -80,3 +80,19 @@ Route::get('/teacher/overview', function () {
 Route::get('/user/overview', function () {
     return Inertia::render('user/overview');
 });
+
+Route::get('/user/learning-material', function() {
+    return Inertia::render('user/learning-material/page');
+});
+
+Route::get('/user/learning-material/{id}', function($id) {
+    return Inertia::render('user/learning-material/show', [
+        'id' => $id,
+    ]);
+});
+
+Route::get('/user/questions/{id}', function($id) {
+    return Inertia::render('user/questions/page', [
+        'id' => $id,
+    ]);
+});
