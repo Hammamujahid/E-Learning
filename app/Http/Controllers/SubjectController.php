@@ -2,108 +2,78 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\City;
 use App\Models\Subject;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use Inertia\Inertia;
+use Inertia\Response;
 
+/**
+ * Reference data managed by admins: subjects and cities.
+ */
 class SubjectController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * The combined "Lainnya" screen listing subjects and cities.
      */
-    public function index()
+    public function index(): Response
     {
-        $subjects = Subject::query();
-
-        $subjects->when(
-            request()->has('is_deleted'),
-            fn($q) => $q->where('is_deleted', request()->boolean('is_deleted')),
-        );
-
-        return response()->json([
-            'status' => 200,
-            'data' => $subjects->get()
+        return Inertia::render('admin/other', [
+            'subjects' => Subject::withDeleted()
+                ->orderBy('name')
+                ->get()
+                ->map(fn (Subject $subject) => [
+                    'id' => $subject->id,
+                    'name' => $subject->name,
+                    'description' => $subject->description,
+                    'is_deleted' => $subject->is_deleted,
+                    'created_at' => $subject->created_at?->toIso8601String(),
+                ])
+                ->values(),
+            'cities' => City::withDeleted()
+                ->orderBy('name')
+                ->get()
+                ->map(fn (City $city) => [
+                    'id' => $city->id,
+                    'name' => $city->name,
+                    'is_deleted' => $city->is_deleted,
+                    'created_at' => $city->created_at?->toIso8601String(),
+                ])
+                ->values(),
         ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create() {}
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
-        $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
-            'is_deleted' => ['nullable', 'boolean'],
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:100', Rule::unique('subjects', 'name')],
+            'description' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        $subject = Subject::create(
-            [
-                'name' => $request->name,
-                'description' => $request->description,
-                'is_deleted' => $request->is_deleted
-            ]
-        );
+        Subject::create([...$validated, 'is_deleted' => false]);
 
-        return response()->json([
-            'status' => 200,
-            'data' => $subject
-        ]);
+        return back()->with('success', 'Mata pelajaran berhasil ditambahkan.');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show($id)
+    public function update(Request $request, Subject $subject): RedirectResponse
     {
-        $subject = Subject::findOrFail($id);
-
-
-        return response()->json([
-            'status' => 200,
-            'data' => $subject
-        ]);
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, $id)
-    {
-        $subject = Subject::findOrFail($id);
-
-        $validatedData = $request->validate([
-            'name' => 'sometimes|required|string|max:20',
-            'description' => 'nullable|string',
-            'is_deleted'  => 'sometimes|boolean',
+        $validated = $request->validate([
+            'name' => ['sometimes', 'required', 'string', 'max:100', Rule::unique('subjects', 'name')->ignore($subject->id)],
+            'description' => ['nullable', 'string', 'max:1000'],
+            'is_deleted' => ['sometimes', 'boolean'],
         ]);
 
-        $subject->update($validatedData);
+        $subject->forceFill($validated)->save();
 
-        return response()->json(['status' => 200, 'data' => $subject]);
+        return back()->with('success', 'Mata pelajaran berhasil diperbarui.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy($id)
+    public function destroy(Subject $subject): RedirectResponse
     {
-        $subject = Subject::findOrFail($id);
+        $subject->softDelete();
 
-        $subject->delete();
-
-        return response()->json(['status' => 200, 'message' => 'Subject deleted successfully']);
+        return back()->with('success', 'Mata pelajaran berhasil dihapus.');
     }
 }

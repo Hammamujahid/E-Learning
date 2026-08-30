@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
 use App\Models\LearningMaterial;
+use App\Models\User;
+use Illuminate\Database\Seeder;
 
 class LearningMaterialTableSeeder extends Seeder
 {
@@ -13,19 +13,24 @@ class LearningMaterialTableSeeder extends Seeder
      */
     public function run(): void
     {
-       $LearningMaterials = [
-        [ 'subject_id' => 1, 'name' => 'Introduction to Laravel', 'created_by' => 'Hammam Mujahid'],
-        [ 'subject_id' => 2, 'name' => 'Introduction to ReactJS', 'created_by' => 'Hammam Mujahid'],
-        [ 'subject_id' => 3, 'name' => 'Introduction to NextJS', 'created_by' => 'Hammam Mujahid'],
-        [ 'subject_id' => 4, 'name' => 'Introduction to Flutter', 'created_by' => 'Hammam Mujahid'],
-       ];
+        $teacher = User::where('role', User::ROLE_TEACHER)->first()
+            ?? User::where('role', User::ROLE_ADMIN)->first();
 
-       foreach ($LearningMaterials as $data){
-        LearningMaterial::create([
-            'subject_id' => $data['subject_id'],
-            'name' => $data['name'],
-            'created_by' => $data['created_by'],
-        ]);
-       }
+        $learningMaterials = [
+            ['subject_id' => 1, 'name' => 'Introduction to Laravel', 'description' => 'Dasar-dasar framework Laravel.'],
+            ['subject_id' => 2, 'name' => 'Introduction to ReactJS', 'description' => 'Dasar-dasar library ReactJS.'],
+            ['subject_id' => 3, 'name' => 'Introduction to NextJS', 'description' => 'Dasar-dasar framework NextJS.'],
+            ['subject_id' => 4, 'name' => 'Introduction to Flutter', 'description' => 'Dasar-dasar framework Flutter.'],
+        ];
+
+        foreach ($learningMaterials as $data) {
+            LearningMaterial::create([
+                'subject_id' => $data['subject_id'],
+                'name' => $data['name'],
+                'description' => $data['description'],
+                'created_by' => $teacher?->id,
+                'is_deleted' => false,
+            ]);
+        }
     }
 }

@@ -1,8 +1,6 @@
 import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { UserInfo } from '@/components/user-info';
 import { useMobileNavigation } from '@/hooks/use-mobile-navigation';
-import { api } from '@/lib/api';
-import { clearAuth, redirectToLogin } from '@/lib/auth';
 import { type User } from '@/types';
 import { Link, router } from '@inertiajs/react';
 import { LogOut, Settings } from 'lucide-react';
@@ -14,17 +12,9 @@ interface UserMenuContentProps {
 export function UserMenuContent({ user }: UserMenuContentProps) {
     const cleanup = useMobileNavigation();
 
-    const handleLogout = async () => {
-        try {
-            cleanup();
-            await api.post('/api/logout');
-            clearAuth();
-            redirectToLogin();
-        } catch (error) {
-            console.error('Logout failed:', error);
-        } finally {
-            router.flushAll();
-        }
+    const handleLogout = () => {
+        cleanup();
+        router.post(route('logout'));
     };
 
     return (

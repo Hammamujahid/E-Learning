@@ -2,15 +2,17 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasDeletedFlag;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Symfony\Component\Console\Question\Question;
 
 class LearningMaterial extends Model
 {
-    use HasFactory;
+    use HasDeletedFlag, HasFactory;
+
+    protected $table = 'learning_materials';
 
     protected $fillable = [
         'subject_id',
@@ -19,12 +21,24 @@ class LearningMaterial extends Model
         'description',
         'file_path',
         'public_id',
-        'is_deleted'
+        'is_deleted',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'is_deleted' => 'boolean',
+        ];
+    }
 
     public function subject(): BelongsTo
     {
         return $this->belongsTo(Subject::class);
+    }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     public function questions(): HasMany
@@ -34,6 +48,6 @@ class LearningMaterial extends Model
 
     public function quizAttempts(): HasMany
     {
-        return $this->hasMany(quiz_attempt::class);
+        return $this->hasMany(QuizAttempt::class);
     }
 }

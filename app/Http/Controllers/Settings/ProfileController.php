@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\ProfileUpdateRequest;
+use App\Models\City;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,26 +19,53 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): Response
     {
+        $user = $request->user();
+        $profile = $user->profile;
+
         return Inertia::render('settings/profile', [
-            'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
+            'mustVerifyEmail' => $user instanceof MustVerifyEmail,
             'status' => $request->session()->get('status'),
+            'profile' => [
+                'fullname' => $profile?->fullname,
+                'birth_date' => $profile?->birth_date?->format('Y-m-d'),
+                'phone_number' => $profile?->phone_number,
+                'gender' => $profile?->gender,
+                'city_id' => $profile?->city_id,
+            ],
+            'cities' => City::orderBy('name')->get(['id', 'name']),
         ]);
     }
 
     /**
-     * Update the user's profile settings.
+     * Update the user's own profile. Role is intentionally not updatable here.
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $user = $request->user();
+        $validated = $request->validated();
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        $user->fill([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+        ]);
+
+        if ($user->isDirty('email')) {
+            $user->email_verified_at = null;
         }
 
-        $request->user()->save();
+        $user->save();
 
-        return to_route('profile.edit');
+        $profile = $user->profile ?? $user->profile()->create(['is_deleted' => false]);
+
+        $profile->update([
+            'fullname' => $validated['fullname'] ?? null,
+            'birth_date' => $validated['birth_date'] ?? null,
+            'phone_number' => $validated['phone_number'] ?? null,
+            'gender' => $validated['gender'] ?? null,
+            'city_id' => $validated['city_id'] ?? null,
+        ]);
+
+        return to_route('settings.profile');
     }
 
     /**

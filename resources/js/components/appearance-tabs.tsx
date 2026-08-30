@@ -3,32 +3,46 @@ import { cn } from '@/lib/utils';
 import { LucideIcon, Monitor, Moon, Sun } from 'lucide-react';
 import { HTMLAttributes } from 'react';
 
+const TABS: { value: Appearance; icon: LucideIcon; label: string; hint: string }[] = [
+    { value: 'light', icon: Sun, label: 'Terang', hint: 'Selalu tema terang' },
+    { value: 'dark', icon: Moon, label: 'Gelap', hint: 'Selalu tema gelap' },
+    { value: 'system', icon: Monitor, label: 'Sistem', hint: 'Ikuti perangkat' },
+];
+
 export default function AppearanceToggleTab({ className = '', ...props }: HTMLAttributes<HTMLDivElement>) {
     const { appearance, updateAppearance } = useAppearance();
 
-    const tabs: { value: Appearance; icon: LucideIcon; label: string }[] = [
-        { value: 'light', icon: Sun, label: 'Light' },
-        { value: 'dark', icon: Moon, label: 'Dark' },
-        { value: 'system', icon: Monitor, label: 'System' },
-    ];
-
     return (
-        <div className={cn('inline-flex gap-1 rounded-lg bg-neutral-100 p-1 dark:bg-neutral-800', className)} {...props}>
-            {tabs.map(({ value, icon: Icon, label }) => (
-                <button
-                    key={value}
-                    onClick={() => updateAppearance(value)}
-                    className={cn(
-                        'flex items-center rounded-md px-3.5 py-1.5 transition-colors',
-                        appearance === value
-                            ? 'bg-white text-primary shadow-xs dark:bg-neutral-700 dark:text-neutral-100'
-                            : 'text-neutral-500 hover:bg-neutral-200/60 hover:text-black dark:text-neutral-400 dark:hover:bg-neutral-700/60',
-                    )}
-                >
-                    <Icon className="-ml-1 h-4 w-4" />
-                    <span className="ml-1.5 text-sm">{label}</span>
-                </button>
-            ))}
+        <div className={cn('grid gap-3 sm:grid-cols-3', className)} {...props}>
+            {TABS.map(({ value, icon: Icon, label, hint }) => {
+                const isActive = appearance === value;
+
+                return (
+                    <button
+                        key={value}
+                        onClick={() => updateAppearance(value)}
+                        aria-pressed={isActive}
+                        className={cn(
+                            'flex flex-col items-start gap-2 rounded-xl border p-4 text-left transition-colors',
+                            isActive ? 'border-primary bg-primary-soft' : 'border-border bg-card hover:border-primary/25 hover:bg-muted/50',
+                        )}
+                    >
+                        <span
+                            className={cn(
+                                'rounded-lg p-2 transition-colors',
+                                isActive ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground',
+                            )}
+                        >
+                            <Icon className="h-4 w-4" />
+                        </span>
+
+                        <span className="space-y-0.5">
+                            <span className={cn('block text-sm font-medium', isActive ? 'text-primary' : 'text-foreground')}>{label}</span>
+                            <span className="block text-xs text-muted-foreground">{hint}</span>
+                        </span>
+                    </button>
+                );
+            })}
         </div>
     );
 }

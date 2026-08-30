@@ -1,52 +1,41 @@
-import { api } from '@/lib/api';
-import { AxiosError } from 'axios';
-import { useState } from 'react';
-import { toast } from 'sonner';
+import { Field, controlClass } from '@/components/form-field';
+import { Button } from '@/components/ui/button';
+import { useForm } from '@inertiajs/react';
+import { Loader2 } from 'lucide-react';
+import { FormEventHandler } from 'react';
 
 export default function CreateCity({ onSuccess }: { onSuccess?: () => void }) {
-    const [name, setName] = useState('');
-    const [errors, setErrors] = useState<Record<string, string>>({});
+    const { data, setData, post, processing, errors, reset } = useForm({ name: '' });
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit: FormEventHandler = (e) => {
         e.preventDefault();
 
-        try {
-            await api.post('/api/city', {
-                name,
-                is_deleted: false,
-            });
-
-            toast.success('Data berhasil ditambahkan');
-
-            onSuccess?.();
-        } catch (err) {
-            const error = err as AxiosError<{ errors?: Record<string, string[]> }>;
-            const validationErrors = error.response?.data?.errors;
-            if (error.response?.status === 422 && validationErrors) {
-                const mapped: Record<string, string> = {};
-                Object.entries(validationErrors).forEach(([k, v]) => (mapped[k] = v[0]));
-                setErrors(mapped);
-            } else {
-                toast.error('Gagal menyimpan. Coba lagi nanti.');
-            }
-        }
+        post(route('admin.city.store'), {
+            preserveScroll: true,
+            onSuccess: () => {
+                reset();
+                onSuccess?.();
+            },
+        });
     };
 
     return (
-        <form className="space-y-4 text-primary" onSubmit={handleSubmit}>
-            {/* Nama */}
-            <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Nama"
-                className={`w-full rounded border p-2 ${errors.name ? 'border-red-500' : ''}`}
-            />
-            {errors.name && <p className="mt-0.5 text-sm text-red-500">{errors.name}</p>}
+        <form className="space-y-4" onSubmit={handleSubmit}>
+            <Field label="Nama Kota" htmlFor="city-name" error={errors.name} required>
+                <input
+                    id="city-name"
+                    value={data.name}
+                    onChange={(e) => setData('name', e.target.value)}
+                    placeholder="Contoh: Surabaya"
+                    className={controlClass(errors.name)}
+                    autoFocus
+                />
+            </Field>
 
-            {/* Submit */}
-            <button type="submit" className="w-full rounded bg-blue-500 py-2 text-white hover:bg-blue-600">
+            <Button type="submit" disabled={processing} className="w-full">
+                {processing && <Loader2 className="h-4 w-4 animate-spin" />}
                 Simpan
-            </button>
+            </Button>
         </form>
     );
 }

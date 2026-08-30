@@ -1,295 +1,220 @@
+import { FileTypeBadge } from '@/components/document-viewer';
+import { controlClass, Field, FormActions } from '@/components/form-field';
+import { PageHeader, SectionLabel, SurfaceCard } from '@/components/page-header';
+import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
-import { api } from '@/lib/api';
 import { BreadcrumbItem } from '@/types';
-import { LearningMaterial, Subject } from '@/types/interfaces';
-import { Head, Link, usePage } from '@inertiajs/react';
-import { AxiosError } from 'axios';
-import { BookOpen, FileText, Loader2, Upload, X } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { toast } from 'sonner';
+import { Head, Link, useForm } from '@inertiajs/react';
+import { ExternalLink, FileText, Loader2, Upload, X } from 'lucide-react';
+import { useRef } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Daftar Materi', href: '/admin/learning-material' },
-    { title: 'Edit Materi', href: '' },
+    { title: 'Materi', href: '/admin/learning-material' },
+    { title: 'Edit', href: '' },
 ];
 
-function FieldRow({ label, children, error }: { label: string; children: React.ReactNode; error?: string }) {
-    return (
-        <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-primary">{label}</label>
-            {children}
-            {error && <p className="text-xs text-red-500">{error}</p>}
-        </div>
-    );
+interface EditProps {
+    material: {
+        id: number;
+        name: string;
+        description: string | null;
+        file_path: string | null;
+        subject_id: number;
+    };
+    subjects: Array<{ id: number; name: string }>;
 }
 
-export default function EditLearningMaterial() {
-    const { id } = usePage<{ id: number }>().props;
-
-    const [material, setMaterial] = useState<LearningMaterial | null>(null);
-    const [subjects, setSubjects] = useState<Subject[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [saving, setSaving] = useState(false);
-    const [errors, setErrors] = useState<Record<string, string>>({});
-
-    const [name, setName] = useState('');
-    const [originalName, setOriginalName] = useState('');
-    const [description, setDescription] = useState('');
-    const [originalDescription, setOriginalDescription] = useState('');
-    const [subjectId, setSubjectId] = useState<number | null>(null);
-    const [originalSubjectId, setOriginalSubjectId] = useState<number | null>(null);
-    const [newFile, setNewFile] = useState<File | null>(null);
-    const [removeFile, setRemoveFile] = useState(false);
-
+export default function EditLearningMaterial({ material, subjects }: EditProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const fetchData = useCallback(async () => {
-        setLoading(true);
-        try {
-            const [materialRes, subjectsRes] = await Promise.all([
-                api.get(`/api/learning-materials/${id}`, { params: { subject: true } }),
-                api.get('/api/subjects'),
-            ]);
-            const data: LearningMaterial = materialRes.data.data;
-            setMaterial(data);
-            setName(data.name ?? '');
-            setOriginalName(data.name ?? '');
-            setDescription(data.description ?? '');
-            setOriginalDescription(data.description ?? '');
-            setSubjectId(data.subject?.id ?? null);
-            setOriginalSubjectId(data.subject?.id ?? null);
-            setSubjects(subjectsRes.data.data);
-        } catch (err) {
-            const error = err as AxiosError<{ message?: string }>;
-            toast.error(error.response?.data?.message ?? 'Gagal memuat data');
-        } finally {
-            setLoading(false);
-        }
-    }, [id]);
+    const { data, setData, post, processing, errors, isDirty } = useForm<{
+        name: string;
+        description: string;
+        subject_id: string;
+        file: File | null;
+        remove_file: boolean;
+    }>({
+        name: material.name,
+        description: material.description ?? '',
+        subject_id: String(material.subject_id),
+        file: null,
+        remove_file: false,
+    });
 
-    useEffect(() => {
-        fetchData();
-    }, [fetchData]);
+    const currentFileName = material.file_path?.split('/').pop() ?? null;
 
-    const isDirty = useMemo(() => {
-        return name !== originalName || description !== originalDescription || subjectId !== originalSubjectId || newFile !== null || removeFile;
-    }, [name, originalName, description, originalDescription, subjectId, originalSubjectId, newFile, removeFile]);
-
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setNewFile(file);
-            setRemoveFile(false);
-            setErrors((prev) => ({ ...prev, file: '' }));
-        }
-    };
-
-    const handleRemoveFile = () => {
-        setNewFile(null);
-        setRemoveFile(true);
-        if (fileInputRef.current) fileInputRef.current.value = '';
-    };
-
-    const handleSave = async () => {
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
         if (!isDirty) return;
-        setSaving(true);
-        setErrors({});
 
-        try {
-            const formData = new FormData();
-            formData.append('_method', 'PATCH');
-            formData.append('name', name);
-            formData.append('description', description || '');
-            if (subjectId) formData.append('subject_id', String(subjectId));
-            if (newFile) formData.append('file', newFile);
-            if (removeFile) formData.append('remove_file', '1');
-
-            const response = await api.post(`/api/learning-materials/${id}`, formData, {
-                headers: { 'Content-Type': 'multipart/form-data' },
-            });
-
-            const updated = response.data.data;
-            setMaterial(updated);
-            setOriginalName(name);
-            setOriginalDescription(description);
-            setOriginalSubjectId(subjectId);
-            setNewFile(null);
-            setRemoveFile(false);
-            toast.success('Materi berhasil diperbarui');
-        } catch (err) {
-            const error = err as AxiosError<{ errors?: Record<string, string[]> }>;
-            const validationErrors = error.response?.data?.errors;
-            if (error.response?.status === 422 && validationErrors) {
-                const mapped: Record<string, string> = {};
-                Object.entries(validationErrors).forEach(([k, v]) => (mapped[k] = v[0]));
-                setErrors(mapped);
-            } else {
-                toast.error('Gagal menyimpan. Coba lagi nanti.');
-            }
-        } finally {
-            setSaving(false);
-        }
+        post(route('learning-material.update', material.id), {
+            forceFormData: true,
+            preserveScroll: true,
+        });
     };
-
-    if (loading || !material) {
-        return (
-            <div className="flex h-screen items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
-        );
-    }
-
-    const currentFileName = newFile ? newFile.name : removeFile ? null : (material.file_path?.split('/').pop() ?? null);
-
-    const inputClass =
-        'w-full rounded-md border border-border/30 bg-background px-3 py-2 text-sm text-primary focus:outline-none focus:ring-1 focus:ring-border/60';
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Edit Materi" />
+            <Head title={`Edit ${material.name}`} />
 
-            <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 p-4">
-                {/* Page header */}
-                <div className="flex items-start justify-between gap-4">
-                    <div>
-                        <h1 className="text-xl font-medium text-primary">Edit Materi</h1>
-                        <p className="text-sm text-muted-foreground">Perbarui informasi materi pembelajaran</p>
-                    </div>
-                    <Link href={`/learning-material/${id}`}>
-                        <button className="flex items-center gap-1.5 bg-background px-3 py-1.5 text-sm text-primary hover:cursor-pointer hover:text-blue-600">
-                            ← Kembali
-                        </button>
-                    </Link>
-                </div>
+            <form onSubmit={handleSubmit} className="mx-auto flex w-full max-w-4xl flex-col gap-6">
+                <PageHeader
+                    title="Edit Materi"
+                    description="Perbarui informasi dan lampiran materi pembelajaran."
+                    actions={
+                        <FormActions>
+                            <Button variant="outline" asChild>
+                                <Link href={route('learning-material.show', material.id)}>Batal</Link>
+                            </Button>
+                            <Button type="submit" disabled={processing || !isDirty}>
+                                {processing && <Loader2 className="h-4 w-4 animate-spin" />}
+                                Simpan Perubahan
+                            </Button>
+                        </FormActions>
+                    }
+                />
 
-                {/* Hero card */}
-                <div className="flex flex-wrap items-center gap-4 rounded-xl border border-muted-foreground/20 bg-background p-5 shadow-sm">
-                    <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl bg-indigo-100">
-                        <FileText className="h-6 w-6 text-indigo-600" />
-                    </div>
-                    <div className="flex-1">
-                        <p className="text-lg font-medium text-primary">{name || '—'}</p>
-                        <div className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
-                            <BookOpen className="h-3.5 w-3.5" />
-                            <span>{subjects.find((s) => s.id === subjectId)?.name ?? '—'}</span>
-                        </div>
-                    </div>
-                    <button
-                        onClick={handleSave}
-                        disabled={saving || !isDirty}
-                        className="rounded-lg border border-green-200 bg-green-50 px-4 py-1.5 text-sm text-green-700 transition hover:bg-green-100 disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                        {saving ? (
-                            <span className="flex items-center gap-1.5">
-                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                Menyimpan...
-                            </span>
-                        ) : (
-                            'Simpan'
-                        )}
-                    </button>
-                </div>
+                <div className="grid gap-4 lg:grid-cols-2">
+                    {/* Informasi materi */}
+                    <SurfaceCard className="flex flex-col gap-4">
+                        <SectionLabel>Informasi</SectionLabel>
 
-                {/* Form */}
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    {/* Informasi Materi */}
-                    <div className="flex flex-col gap-4 rounded-xl border border-muted-foreground/20 bg-background p-5 shadow-sm">
-                        <p className="text-xs font-medium tracking-widest text-muted-foreground/60 uppercase">Informasi Materi</p>
-
-                        <FieldRow label="Judul Materi" error={errors.name}>
+                        <Field label="Judul Materi" htmlFor="name" error={errors.name} required>
                             <input
-                                className={inputClass}
-                                value={name}
-                                onChange={(e) => {
-                                    setName(e.target.value);
-                                    setErrors((prev) => ({ ...prev, name: '' }));
-                                }}
-                                placeholder="Judul materi"
+                                id="name"
+                                value={data.name}
+                                onChange={(e) => setData('name', e.target.value)}
+                                className={controlClass(errors.name)}
                             />
-                        </FieldRow>
+                        </Field>
 
-                        <FieldRow label="Mata Pelajaran" error={errors.subject_id}>
+                        <Field label="Mata Pelajaran" htmlFor="subject_id" error={errors.subject_id} required>
                             <select
-                                className={inputClass}
-                                value={subjectId ?? ''}
-                                onChange={(e) => {
-                                    setSubjectId(Number(e.target.value) || null);
-                                    setErrors((prev) => ({ ...prev, subject_id: '' }));
-                                }}
+                                id="subject_id"
+                                value={data.subject_id}
+                                onChange={(e) => setData('subject_id', e.target.value)}
+                                className={controlClass(errors.subject_id)}
                             >
-                                <option value="">— Pilih Mata Pelajaran —</option>
-                                {subjects.map((s) => (
-                                    <option key={s.id} value={s.id}>
-                                        {s.name}
+                                <option value="">Pilih mata pelajaran</option>
+                                {subjects.map((subject) => (
+                                    <option key={subject.id} value={subject.id}>
+                                        {subject.name}
                                     </option>
                                 ))}
                             </select>
-                        </FieldRow>
+                        </Field>
 
-                        <FieldRow label="Deskripsi" error={errors.description}>
+                        <Field label="Deskripsi" htmlFor="description" error={errors.description}>
                             <textarea
-                                className={`${inputClass} min-h-[120px] resize-y`}
-                                value={description}
-                                onChange={(e) => {
-                                    setDescription(e.target.value);
-                                    setErrors((prev) => ({ ...prev, description: '' }));
-                                }}
-                                placeholder="Deskripsi materi..."
+                                id="description"
+                                value={data.description}
+                                onChange={(e) => setData('description', e.target.value)}
+                                rows={6}
+                                className={controlClass(errors.description, 'resize-y')}
                             />
-                        </FieldRow>
-                    </div>
+                        </Field>
+                    </SurfaceCard>
 
-                    {/* File Materi */}
-                    <div className="flex flex-col gap-4 rounded-xl border border-muted-foreground/20 bg-background p-5 shadow-sm">
-                        <p className="text-xs font-medium tracking-widest text-muted-foreground/60 uppercase">File Materi</p>
+                    {/* File */}
+                    <SurfaceCard className="flex flex-col gap-4">
+                        <SectionLabel>File Materi</SectionLabel>
 
-                        {/* Current / new file preview */}
-                        {currentFileName ? (
-                            <div className="flex items-center justify-between gap-3 rounded-lg border border-border/20 bg-muted/30 px-3 py-3">
-                                <div className="flex items-center gap-3">
-                                    <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-indigo-100">
-                                        <FileText className="h-4 w-4 text-indigo-600" />
+                        {material.file_path && !data.remove_file && !data.file && (
+                            <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/40 px-3 py-2.5">
+                                <div className="flex min-w-0 items-center gap-2.5">
+                                    <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary">
+                                        <FileText className="h-4 w-4" />
                                     </div>
-                                    <div>
-                                        <p className="max-w-[180px] truncate text-sm font-medium text-primary">{currentFileName}</p>
-                                        <p className="text-xs text-muted-foreground">{newFile ? 'File baru' : 'File saat ini'}</p>
+                                    <div className="min-w-0">
+                                        <p className="truncate text-sm font-medium text-foreground">{currentFileName}</p>
+                                        <FileTypeBadge filePath={material.file_path} />
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-shrink-0 items-center gap-1">
+                                    <a
+                                        href={material.file_path}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2 py-1 text-xs font-medium transition-colors hover:bg-muted"
+                                    >
+                                        <ExternalLink className="h-3 w-3" />
+                                        Buka
+                                    </a>
+                                    <button
+                                        type="button"
+                                        onClick={() => setData('remove_file', true)}
+                                        className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-destructive-soft hover:text-destructive"
+                                        title="Hapus file"
+                                    >
+                                        <X className="h-4 w-4" />
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {data.remove_file && !data.file && (
+                            <div className="flex items-center justify-between gap-2 rounded-lg border border-dashed border-destructive/40 bg-destructive-soft px-3 py-2.5 text-sm text-destructive">
+                                <span>File akan dihapus saat disimpan.</span>
+                                <button type="button" onClick={() => setData('remove_file', false)} className="text-xs font-medium underline">
+                                    Batalkan
+                                </button>
+                            </div>
+                        )}
+
+                        {data.file && (
+                            <div className="flex items-center justify-between gap-3 rounded-lg border border-success/25 bg-success-soft px-3 py-2.5">
+                                <div className="flex min-w-0 items-center gap-2.5">
+                                    <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-success/15 text-success">
+                                        <FileText className="h-4 w-4" />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="truncate text-sm font-medium text-foreground">{data.file.name}</p>
+                                        <p className="text-xs text-muted-foreground">
+                                            {(data.file.size / 1024 / 1024).toFixed(2)} MB &middot; file baru
+                                        </p>
                                     </div>
                                 </div>
                                 <button
-                                    onClick={handleRemoveFile}
-                                    className="rounded-md p-1 text-muted-foreground transition hover:bg-red-50 hover:text-red-500"
+                                    type="button"
+                                    onClick={() => {
+                                        setData('file', null);
+                                        if (fileInputRef.current) fileInputRef.current.value = '';
+                                    }}
+                                    className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-destructive-soft hover:text-destructive"
                                 >
                                     <X className="h-4 w-4" />
                                 </button>
                             </div>
-                        ) : (
-                            <div className="flex items-center gap-2 rounded-lg border border-dashed border-border/40 px-3 py-4 text-sm text-muted-foreground">
-                                <X className="h-4 w-4 text-red-400" />
-                                <span className="italic">Tidak ada file</span>
-                            </div>
                         )}
 
-                        {/* Upload area */}
-                        <div
+                        <button
+                            type="button"
                             onClick={() => fileInputRef.current?.click()}
-                            className="flex cursor-pointer flex-col items-center gap-2 rounded-lg border border-dashed border-border/30 px-4 py-6 text-center transition hover:border-border/60 hover:bg-muted/20"
+                            className={`flex cursor-pointer flex-col items-center gap-1.5 rounded-lg border border-dashed px-4 py-7 text-center transition-colors hover:bg-muted/40 ${
+                                errors.file ? 'border-destructive' : 'border-border'
+                            }`}
                         >
-                            <Upload className="h-7 w-7 text-muted-foreground/50" />
-                            <p className="text-sm text-muted-foreground">{currentFileName ? 'Ganti file' : 'Upload file'}</p>
-                            <p className="text-xs text-muted-foreground/50">PDF, DOCX, PPTX, XLSX (maks. 20MB)</p>
-                            <input
-                                ref={fileInputRef}
-                                type="file"
-                                className="hidden"
-                                accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx"
-                                onChange={handleFileChange}
-                            />
-                        </div>
+                            <Upload className="h-5 w-5 text-muted-foreground" />
+                            <span className="text-sm font-medium text-foreground">{material.file_path ? 'Ganti file' : 'Pilih file materi'}</span>
+                            <span className="text-xs text-muted-foreground">PDF, DOCX, PPTX, XLSX &middot; maks. 20 MB</span>
+                        </button>
 
-                        {errors.file && <p className="text-xs text-red-500">{errors.file}</p>}
-                    </div>
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            className="hidden"
+                            accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx"
+                            onChange={(e) => {
+                                setData('file', e.target.files?.[0] ?? null);
+                                setData('remove_file', false);
+                            }}
+                        />
+
+                        {errors.file && <p className="text-xs font-medium text-destructive">{errors.file}</p>}
+                    </SurfaceCard>
                 </div>
-            </div>
+            </form>
         </AppLayout>
     );
 }

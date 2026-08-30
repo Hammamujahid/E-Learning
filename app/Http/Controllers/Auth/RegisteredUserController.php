@@ -36,16 +36,21 @@ class RegisteredUserController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
+        // Self-registration always creates a student; elevated roles are
+        // assigned by an admin through user management.
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'role' => User::ROLE_USER,
         ]);
+
+        $user->profile()->create(['is_deleted' => false]);
 
         event(new Registered($user));
 
         Auth::login($user);
 
-        return redirect()->intended(route('user.home', absolute: false));
+        return redirect()->intended(route('user.overview', absolute: false));
     }
 }

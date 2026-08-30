@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -33,15 +34,7 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        // dd($request->user()->role);
-
-        if ($request->user()->role == "admin") {
-            return redirect()->intended(route('admin.dashboard', absolute: false));
-        } elseif ($request->user()->role == "teacher") {
-            return redirect()->intended(route('teacher.overview', absolute: false));
-        } else {
-            return redirect()->intended(route('user.overview', absolute: false));
-        }
+        return redirect()->intended(self::homeRouteFor($request->user()->role));
     }
 
     /**
@@ -55,5 +48,17 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerateToken();
 
         return redirect('/');
+    }
+
+    /**
+     * The landing page each role is sent to after authenticating.
+     */
+    public static function homeRouteFor(?string $role): string
+    {
+        return match ($role) {
+            User::ROLE_ADMIN => route('admin.dashboard', absolute: false),
+            User::ROLE_TEACHER => route('teacher.overview', absolute: false),
+            default => route('user.overview', absolute: false),
+        };
     }
 }

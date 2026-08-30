@@ -1,278 +1,184 @@
-'use client';
-
-import { Badge } from '@/components/ui/badge';
+import { EmptyState, PageHeader } from '@/components/page-header';
+import { DateCell, RoleBadge, RowActions, StatusBadge } from '@/components/table-cells';
+import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/ui/data-table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import AppLayout from '@/layouts/app-layout';
-import { api } from '@/lib/api';
 import { type BreadcrumbItem } from '@/types';
-import { Profile } from '@/types/interfaces';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
-import { Eye, Loader2, RefreshCcw, Trash2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { toast } from 'sonner';
+import { Eye, Pen, Plus, Users } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import CreateUser from '../profile/create';
 
-const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Pengguna',
-        href: '/user',
-    },
-];
+const breadcrumbs: BreadcrumbItem[] = [{ title: 'Pengguna', href: '/admin/user' }];
 
-export default function UserPage() {
-    const [user, setUser] = useState<Profile[]>([]);
-    const [loading, setLoading] = useState(true);
+export interface UserRow {
+    id: number;
+    name: string;
+    email: string;
+    role: 'admin' | 'teacher' | 'user';
+    created_at: string | null;
+    profile: {
+        id: number;
+        fullname: string | null;
+        birth_date: string | null;
+        phone_number: string | null;
+        gender: string | null;
+        is_deleted: boolean;
+        city: { id: number; name: string } | null;
+        city_id: number | null;
+    } | null;
+}
+
+interface UserPageProps {
+    users: UserRow[];
+    cities: Array<{ id: number; name: string }>;
+}
+
+function CreateUserDialog({ cities }: { cities: Array<{ id: number; name: string }> }) {
     const [open, setOpen] = useState(false);
 
-    const columns: ColumnDef<Profile>[] = [
-        {
-            header: 'No',
-            size: 50,
-            cell: ({ row }) => {
-                return <div className="text-center">{row.index + 1}</div>;
-            },
-        },
-        {
-            accessorKey: 'name',
-            header: 'Nama',
-            size: 100,
-            cell: ({ row }) => {
-                return (
-                    <div className="text-center">
-                        <span>{row.original.user?.name}</span>
-                    </div>
-                );
-            },
-        },
-        {
-            accessorKey: 'email',
-            header: 'Email',
-            size: 150,
-            cell: ({ row }) => {
-                return (
-                    <div className="text-center">
-                        <span>{row.original.user?.email}</span>
-                    </div>
-                );
-            },
-        },
-        {
-            accessorKey: 'role',
-            header: 'Peran',
-            size: 100,
-            cell: ({ row }) => {
-                const capitalize = (text: string = '') => text.charAt(0).toUpperCase() + text.slice(1);
-                return (
-                    <div className="text-center">
-                        <span>{capitalize(row.original.user?.role)}</span>
-                    </div>
-                );
-            },
-        },
-        {
-            accessorKey: 'is_deleted',
-            header: 'Status',
-            size: 100,
-            cell: ({ row }) => {
-                const isActive = !row.original.is_deleted;
+    return (
+        <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+                <Button>
+                    <Plus className="h-4 w-4" />
+                    Tambah Pengguna
+                </Button>
+            </DialogTrigger>
 
-                return (
-                    <div className="text-center">
-                        <Badge className={`${isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                            {isActive ? 'Aktif' : 'Non-aktif'}
-                        </Badge>
-                    </div>
-                );
-            },
-        },
-        {
-            accessorKey: 'created_at',
-            header: 'Dibuat Pada',
-            size: 150,
-            cell: ({ row }) => {
-                const raw = row.original.user?.created_at;
+            <DialogContent className="flex max-h-[85vh] flex-col">
+                <DialogHeader>
+                    <DialogTitle>Tambah Pengguna</DialogTitle>
+                </DialogHeader>
 
-                if (!raw) return <div className="text-center">-</div>;
+                <div className="-mx-1 flex-1 overflow-y-auto px-1">
+                    <CreateUser cities={cities} onSuccess={() => setOpen(false)} />
+                </div>
+            </DialogContent>
+        </Dialog>
+    );
+}
 
-                const date = new Date(raw);
+export default function UserPage({ users, cities }: UserPageProps) {
+    const columns = useMemo<ColumnDef<UserRow>[]>(
+        () => [
+            {
+                accessorKey: 'name',
+                header: 'Pengguna',
+                size: 240,
+                cell: ({ row }) => {
+                    const user = row.original;
+                    const initials = user.name.charAt(0).toUpperCase();
 
-                return (
-                    <div className="text-center">
-                        {date.toLocaleString('id-ID', {
-                            day: '2-digit',
-                            month: 'short',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                        })}
-                    </div>
-                );
-            },
-        },
-        {
-            header: 'Aksi',
-            size: 200,
-            cell: ({ row }) => {
-                const id = row.original.id;
-                const userId = row.original.user?.id;
-
-                const handleDeactived = async (e: React.MouseEvent) => {
-                    e.stopPropagation();
-
-                    if (!confirm('Yakin ingin non-aktifkan pengguna ini?')) return;
-
-                    try {
-                        await api.put(`/api/profiles/${id}`, {
-                            is_deleted: true,
-                        });
-
-                        toast.success('User berhasil dinon-aktifkan');
-
-                        window.location.reload(); // atau update state
-                    } catch (error) {
-                        toast.error('Gagal menon-aktifkan pengguna');
-                        console.error(error);
-                    }
-                };
-
-                const handleActived = async (e: React.MouseEvent) => {
-                    e.stopPropagation();
-                    try {
-                        await api.put(`/api/profiles/${id}`, {
-                            is_deleted: false,
-                        });
-
-                        toast.success('User berhasil diaktifkan');
-
-                        window.location.reload(); // atau update state
-                    } catch (error) {
-                        toast.error('Gagal mengaktifkan pengguna');
-                        console.error(error);
-                    }
-                };
-
-                const handleDelete = async (e: React.MouseEvent) => {
-                    e.stopPropagation();
-
-                    if (!confirm('Yakin ingin hapus pengguna ini?')) return;
-
-                    try {
-                        await api.delete(`/api/users/${userId}`);
-
-                        toast.success('User berhasil dihapus');
-
-                        window.location.reload(); // atau update state
-                    } catch (error) {
-                        toast.error('Gagal menghapus pengguna');
-                        console.error(error);
-                    }
-                };
-
-                return (
-                    <div className="flex items-center justify-center gap-2">
-                        {/* Detail */}
-                        <Link href={`/profile/${id}`}>
-                            <div className="cursor-ponter rounded-md bg-blue-100 p-2 text-blue-600 transition hover:bg-blue-200" title="Lihat Detail">
-                                <Eye size={16} />
+                    return (
+                        <div className="flex items-center gap-2.5">
+                            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-primary-soft text-xs font-semibold text-primary">
+                                {initials}
                             </div>
-                        </Link>
-
-                        {/* Delete */}
-                        {row.original.is_deleted === false ? (
-                            <button
-                                onClick={handleDeactived}
-                                className="cursor-pointer rounded-md bg-red-100 p-2 text-red-600 transition hover:bg-red-200"
-                                title="Nonaktifkan"
-                            >
-                                <Trash2 size={16} />
-                            </button>
-                        ) : (
-                            <div className="flex items-center justify-center gap-2">
-                                <button
-                                    onClick={handleActived}
-                                    className="cursor-pointer rounded-md bg-green-100 p-2 text-green-600 transition hover:bg-green-200"
-                                    title="Aktifkan"
+                            <div className="min-w-0">
+                                <Link
+                                    href={route('admin.user.show', user.id)}
+                                    className="block truncate font-medium text-foreground hover:text-primary hover:underline"
                                 >
-                                    <RefreshCcw size={16} />
-                                </button>
-                                <button
-                                    onClick={handleDelete}
-                                    className="cursor-pointer rounded-md bg-red-100 p-2 text-red-600 transition hover:bg-red-200"
-                                    title="Hapus"
-                                >
-                                    <Trash2 size={16} />
-                                </button>
+                                    {user.name}
+                                </Link>
+                                <span className="block truncate text-xs text-muted-foreground">{user.email}</span>
                             </div>
-                        )}
-                    </div>
-                );
-            },
-        },
-    ];
-
-    const fetchUser = async () => {
-        setLoading(true);
-        try {
-            const response = await api.get('/api/profiles', {
-                params: {
-                    user: true,
-                    city: true,
+                        </div>
+                    );
                 },
-            });
-            setUser(response.data.data);
-            toast.success('Data berhasil dimuat');
-        } catch (error) {
-            toast.error('Gagal memuat data');
-            console.error('Error: ', error);
-        } finally {
-            setLoading(false);
-        }
-    };
+            },
+            {
+                accessorKey: 'role',
+                header: 'Peran',
+                size: 110,
+                cell: ({ row }) => <RoleBadge role={row.original.role} />,
+            },
+            {
+                accessorKey: 'profile.city',
+                header: 'Kota',
+                size: 130,
+                cell: ({ row }) => <div className="truncate text-center text-sm">{row.original.profile?.city?.name ?? '—'}</div>,
+            },
+            {
+                accessorKey: 'profile.is_deleted',
+                header: 'Status',
+                size: 120,
+                cell: ({ row }) => <StatusBadge isDeleted={row.original.profile?.is_deleted ?? false} />,
+            },
+            {
+                accessorKey: 'created_at',
+                header: 'Bergabung',
+                size: 170,
+                cell: ({ row }) => <DateCell value={row.original.created_at} />,
+            },
+            {
+                header: 'Aksi',
+                size: 150,
+                cell: ({ row }) => {
+                    const user = row.original;
 
-    useEffect(() => {
-        fetchUser();
-    }, []);
-
-    if (loading) {
-        return (
-            <div className="flex h-screen items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
-        );
-    }
+                    return (
+                        <RowActions
+                            isDeleted={user.profile?.is_deleted ?? false}
+                            extra={
+                                <>
+                                    <Link
+                                        href={route('admin.user.show', user.id)}
+                                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition-colors hover:border-info/30 hover:bg-info-soft hover:text-info"
+                                        title="Lihat detail"
+                                    >
+                                        <Eye size={14} />
+                                    </Link>
+                                    <Link
+                                        href={route('admin.user.edit', user.id)}
+                                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition-colors hover:border-warning/30 hover:bg-warning-soft hover:text-warning"
+                                        title="Edit pengguna"
+                                    >
+                                        <Pen size={14} />
+                                    </Link>
+                                </>
+                            }
+                            onDeactivate={() => {
+                                if (!confirm('Non-aktifkan pengguna ini?')) return;
+                                router.patch(route('admin.user.toggle', user.id), { is_deleted: true }, { preserveScroll: true });
+                            }}
+                            onActivate={() => router.patch(route('admin.user.toggle', user.id), { is_deleted: false }, { preserveScroll: true })}
+                            onDelete={() => {
+                                if (!confirm('Hapus pengguna ini secara permanen? Tindakan ini tidak dapat dibatalkan.')) return;
+                                router.delete(route('admin.user.destroy', user.id), { preserveScroll: true });
+                            }}
+                        />
+                    );
+                },
+            },
+        ],
+        [],
+    );
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Daftar Pengguna" />
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
-                <div className="flex items-center justify-between">
-                    <h1 className="text-2xl font-bold text-primary">Daftar Pengguna</h1>
-                    <Dialog open={open} onOpenChange={setOpen}>
-                        <DialogTrigger asChild>
-                            <button className="mr-8 cursor-pointer rounded-lg bg-green-600 px-4 py-2 font-medium text-foreground shadow-md transition hover:font-normal hover:shadow-transparent">
-                                + Tambah User
-                            </button>
-                        </DialogTrigger>
 
-                        <DialogContent className="flex max-h-[80vh] flex-col">
-                            <DialogHeader>
-                                <DialogTitle>Tambah User</DialogTitle>
-                            </DialogHeader>
+            <div className="flex flex-col gap-6">
+                <PageHeader
+                    title="Pengguna"
+                    description={`${users.length} guru dan siswa terdaftar.`}
+                    actions={<CreateUserDialog cities={cities} />}
+                />
 
-                            <div className="flex-1 overflow-y-auto px-4">
-                                <CreateUser
-                                    onSuccess={() => {
-                                        setOpen(false);
-                                        fetchUser();
-                                    }}
-                                />
-                            </div>
-                        </DialogContent>
-                    </Dialog>
-                </div>
-                <DataTable columns={columns} data={user} />
+                {users.length === 0 ? (
+                    <EmptyState
+                        icon={Users}
+                        title="Belum ada pengguna"
+                        description="Tambahkan akun guru atau siswa untuk mulai menggunakan platform."
+                        action={<CreateUserDialog cities={cities} />}
+                    />
+                ) : (
+                    <DataTable columns={columns} data={users} emptyMessage="Belum ada pengguna." />
+                )}
             </div>
         </AppLayout>
     );

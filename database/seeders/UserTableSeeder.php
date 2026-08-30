@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\User;
+use Illuminate\Database\Seeder;
 
 class UserTableSeeder extends Seeder
 {
@@ -30,7 +30,7 @@ class UserTableSeeder extends Seeder
                 'email' => 'teacher@example.com',
                 'password' => bcrypt('teacher123'),
                 'role' => 'teacher',
-            ]
+            ],
         ];
 
         foreach ($Users as $data) {

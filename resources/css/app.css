@@ -14,6 +14,8 @@
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
     --radius-sm: calc(var(--radius) - 4px);
+    --radius-xl: calc(var(--radius) + 4px);
+    --radius-2xl: calc(var(--radius) + 8px);
 
     --color-background: var(--background);
     --color-foreground: var(--foreground);
@@ -26,6 +28,7 @@
 
     --color-primary: var(--primary);
     --color-primary-foreground: var(--primary-foreground);
+    --color-primary-soft: var(--primary-soft);
 
     --color-secondary: var(--secondary);
     --color-secondary-foreground: var(--secondary-foreground);
@@ -38,6 +41,20 @@
 
     --color-destructive: var(--destructive);
     --color-destructive-foreground: var(--destructive-foreground);
+    --color-destructive-soft: var(--destructive-soft);
+
+    /* Status palette: each has a solid tone plus a soft surface for badges. */
+    --color-success: var(--success);
+    --color-success-foreground: var(--success-foreground);
+    --color-success-soft: var(--success-soft);
+
+    --color-warning: var(--warning);
+    --color-warning-foreground: var(--warning-foreground);
+    --color-warning-soft: var(--warning-soft);
+
+    --color-info: var(--info);
+    --color-info-foreground: var(--info-foreground);
+    --color-info-soft: var(--info-soft);
 
     --color-border: var(--border);
     --color-input: var(--input);
@@ -57,15 +74,14 @@
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-ring: var(--sidebar-ring);
+
+    --shadow-card: 0 1px 2px 0 oklch(0 0 0 / 0.04), 0 1px 3px 0 oklch(0 0 0 / 0.06);
+    --shadow-card-hover: 0 4px 12px -2px oklch(0 0 0 / 0.08), 0 2px 6px -2px oklch(0 0 0 / 0.06);
 }
 
 /*
-  The default border color has changed to `currentColor` in Tailwind CSS v4,
-  so we've added these compatibility styles to make sure everything still
-  looks the same as it did with Tailwind CSS v3.
-
-  If we ever want to remove these styles, we need to add an explicit border
-  color utility to any element that depends on these defaults.
+  Tailwind CSS v4 defaults the border colour to `currentColor`; pin it to the
+  themed border token so every surface stays consistent across light and dark.
 */
 @layer base {
     *,
@@ -73,79 +89,136 @@
     ::before,
     ::backdrop,
     ::file-selector-button {
-        border-color: var(--color-gray-200, currentColor);
+        border-color: var(--border);
     }
 }
 
+/*
+  Semantic palette.
+
+  `foreground` is always the text colour and `background` always the page
+  surface — the two must never be swapped. Use `card` / `muted` for raised or
+  recessed surfaces instead of reaching for `foreground` as a fill.
+*/
 :root {
-    --background: #ffffff;
-    --foreground: #F2F4F6;
+    --radius: 0.75rem;
+
+    --background: oklch(0.994 0.002 260);
+    --foreground: oklch(0.21 0.02 265);
+
     --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
+    --card-foreground: oklch(0.21 0.02 265);
+
     --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-    --primary: #000000;
-    --primary-foreground: #e0e3e5;
-    --secondary: #003461;
-    --secondary-foreground: #2d3133;
-    --muted: #93F2F2;
-    --muted-foreground: #424750;
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
-    --destructive: oklch(0.577 0.245 27.325);
-    --destructive-foreground: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.87 0 0);
-    --chart-1: oklch(60.918% 0.24999 29.223);
-    --chart-2: oklch(0.6 0.118 184.704);
-    --chart-3: oklch(0.398 0.07 227.392);
-    --chart-4: oklch(0.828 0.189 84.429);
-    --chart-5: oklch(0.769 0.188 70.08);
-    --radius: 0.625rem;
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.87 0 0);
+    --popover-foreground: oklch(0.21 0.02 265);
+
+    /* Indigo — the single accent that drives actions and active states. */
+    --primary: oklch(0.53 0.19 268);
+    --primary-foreground: oklch(0.99 0.002 260);
+    --primary-soft: oklch(0.95 0.03 268);
+
+    --secondary: oklch(0.96 0.008 265);
+    --secondary-foreground: oklch(0.31 0.03 265);
+
+    --muted: oklch(0.968 0.006 265);
+    --muted-foreground: oklch(0.53 0.02 265);
+
+    --accent: oklch(0.955 0.012 268);
+    --accent-foreground: oklch(0.35 0.06 268);
+
+    --destructive: oklch(0.58 0.22 25);
+    --destructive-foreground: oklch(0.99 0.002 260);
+    --destructive-soft: oklch(0.955 0.03 25);
+
+    --success: oklch(0.58 0.15 155);
+    --success-foreground: oklch(0.99 0.002 260);
+    --success-soft: oklch(0.955 0.04 155);
+
+    --warning: oklch(0.66 0.15 70);
+    --warning-foreground: oklch(0.99 0.002 260);
+    --warning-soft: oklch(0.96 0.05 80);
+
+    --info: oklch(0.6 0.14 235);
+    --info-foreground: oklch(0.99 0.002 260);
+    --info-soft: oklch(0.955 0.035 235);
+
+    --border: oklch(0.918 0.008 265);
+    --input: oklch(0.9 0.01 265);
+    --ring: oklch(0.53 0.19 268);
+
+    --chart-1: oklch(0.53 0.19 268);
+    --chart-2: oklch(0.6 0.14 235);
+    --chart-3: oklch(0.58 0.15 155);
+    --chart-4: oklch(0.66 0.15 70);
+    --chart-5: oklch(0.6 0.2 340);
+
+    --sidebar: oklch(0.985 0.004 265);
+    --sidebar-foreground: oklch(0.28 0.02 265);
+    --sidebar-primary: oklch(0.53 0.19 268);
+    --sidebar-primary-foreground: oklch(0.99 0.002 260);
+    --sidebar-accent: oklch(0.95 0.02 268);
+    --sidebar-accent-foreground: oklch(0.35 0.08 268);
+    --sidebar-border: oklch(0.92 0.008 265);
+    --sidebar-ring: oklch(0.53 0.19 268);
 }
 
 .dark {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.145 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.145 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.985 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.396 0.141 25.723);
-    --destructive-foreground: oklch(0.637 0.237 25.331);
-    --border: oklch(0.269 0 0);
-    --input: oklch(0.269 0 0);
-    --ring: oklch(0.439 0 0);
-    --chart-1: oklch(0.488 0.243 264.376);
-    --chart-2: oklch(0.696 0.17 162.48);
-    --chart-3: oklch(0.769 0.188 70.08);
-    --chart-4: oklch(0.627 0.265 303.9);
-    --chart-5: oklch(0.645 0.246 16.439);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.985 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(0.269 0 0);
-    --sidebar-ring: oklch(0.439 0 0);
+    --background: oklch(0.17 0.015 265);
+    --foreground: oklch(0.96 0.005 265);
+
+    --card: oklch(0.215 0.018 265);
+    --card-foreground: oklch(0.96 0.005 265);
+
+    --popover: oklch(0.235 0.02 265);
+    --popover-foreground: oklch(0.96 0.005 265);
+
+    --primary: oklch(0.68 0.17 268);
+    --primary-foreground: oklch(0.17 0.02 265);
+    --primary-soft: oklch(0.3 0.06 268);
+
+    --secondary: oklch(0.27 0.02 265);
+    --secondary-foreground: oklch(0.93 0.008 265);
+
+    --muted: oklch(0.265 0.018 265);
+    --muted-foreground: oklch(0.7 0.015 265);
+
+    --accent: oklch(0.3 0.035 268);
+    --accent-foreground: oklch(0.92 0.02 268);
+
+    --destructive: oklch(0.65 0.2 25);
+    --destructive-foreground: oklch(0.17 0.02 265);
+    --destructive-soft: oklch(0.31 0.07 25);
+
+    --success: oklch(0.7 0.15 155);
+    --success-foreground: oklch(0.17 0.02 265);
+    --success-soft: oklch(0.3 0.06 155);
+
+    --warning: oklch(0.76 0.14 75);
+    --warning-foreground: oklch(0.17 0.02 265);
+    --warning-soft: oklch(0.32 0.06 75);
+
+    --info: oklch(0.7 0.13 235);
+    --info-foreground: oklch(0.17 0.02 265);
+    --info-soft: oklch(0.3 0.06 235);
+
+    --border: oklch(0.31 0.02 265);
+    --input: oklch(0.34 0.02 265);
+    --ring: oklch(0.68 0.17 268);
+
+    --chart-1: oklch(0.68 0.17 268);
+    --chart-2: oklch(0.7 0.13 235);
+    --chart-3: oklch(0.7 0.15 155);
+    --chart-4: oklch(0.76 0.14 75);
+    --chart-5: oklch(0.7 0.18 340);
+
+    --sidebar: oklch(0.195 0.017 265);
+    --sidebar-foreground: oklch(0.93 0.008 265);
+    --sidebar-primary: oklch(0.68 0.17 268);
+    --sidebar-primary-foreground: oklch(0.17 0.02 265);
+    --sidebar-accent: oklch(0.29 0.035 268);
+    --sidebar-accent-foreground: oklch(0.93 0.02 268);
+    --sidebar-border: oklch(0.29 0.02 265);
+    --sidebar-ring: oklch(0.68 0.17 268);
 }
 
 @layer base {
@@ -155,5 +228,41 @@
 
     body {
         @apply bg-background text-foreground;
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+    }
+
+    /* Keep keyboard focus visible everywhere without doubling up on mouse. */
+    :focus-visible {
+        @apply outline-2 outline-offset-2 outline-ring;
+    }
+
+    ::selection {
+        background-color: var(--primary-soft);
+        color: var(--accent-foreground);
+    }
+}
+
+@layer utilities {
+    /* Subtle grid used behind hero and empty states. */
+    .bg-grid {
+        background-image:
+            linear-gradient(to right, var(--border) 1px, transparent 1px), linear-gradient(to bottom, var(--border) 1px, transparent 1px);
+        background-size: 3rem 3rem;
+    }
+
+    .animate-rise {
+        animation: rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+}
+
+@keyframes rise {
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }

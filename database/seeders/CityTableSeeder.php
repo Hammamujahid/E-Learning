@@ -2,9 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
 use App\Models\City;
+use Illuminate\Database\Seeder;
 
 class CityTableSeeder extends Seeder
 {
@@ -14,17 +13,17 @@ class CityTableSeeder extends Seeder
     public function run(): void
     {
         $Cities = [
-            "Surabaya",
-            "Jakarta",
-            "Bandung",
-            "Yogyakarta",
-            "Malang",
-            "Ngawi"
+            'Surabaya',
+            'Jakarta',
+            'Bandung',
+            'Yogyakarta',
+            'Malang',
+            'Ngawi',
         ];
 
         foreach ($Cities as $name) {
             City::create([
-                "name" => $name
+                'name' => $name,
             ]);
         }
     }

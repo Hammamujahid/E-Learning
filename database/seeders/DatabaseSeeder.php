@@ -12,13 +12,15 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // Activities are recorded automatically by ActivityObserver as the
+        // seeders above create users, materials and questions.
         $this->call([
             CityTableSeeder::class,
             SubjectTableSeeder::class,
-            LearningMaterialTableSeeder::class,
             UserTableSeeder::class,
             ProfileTableSeeder::class,
-            ActivityTableSeeder::class,
+            LearningMaterialTableSeeder::class,
+            QuestionTableSeeder::class,
         ]);
     }
 }

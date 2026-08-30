@@ -1,4 +1,3 @@
-// Components
 import { Head, useForm } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 import { FormEventHandler } from 'react';
@@ -22,42 +21,38 @@ export default function ForgotPassword({ status }: { status?: string }) {
     };
 
     return (
-        <AuthLayout title="Forgot password" description="Enter your email to receive a password reset link">
-            <Head title="Forgot password" />
+        <AuthLayout title="Lupa password" description="Masukkan email untuk menerima tautan reset password">
+            <Head title="Lupa password" />
 
-            {status && <div className="mb-4 text-center text-sm font-medium text-green-600">{status}</div>}
+            {status && (
+                <div className="mb-4 rounded-lg border border-success/20 bg-success-soft px-3 py-2 text-sm font-medium text-success">{status}</div>
+            )}
 
-            <div className="space-y-6">
-                <form onSubmit={submit}>
-                    <div className="grid gap-2">
-                        <Label htmlFor="email">Email address</Label>
-                        <Input
-                            id="email"
-                            type="email"
-                            name="email"
-                            autoComplete="off"
-                            value={data.email}
-                            autoFocus
-                            onChange={(e) => setData('email', e.target.value)}
-                            placeholder="email@example.com"
-                        />
-
-                        <InputError message={errors.email} />
-                    </div>
-
-                    <div className="my-6 flex items-center justify-start">
-                        <Button className="w-full" disabled={processing}>
-                            {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
-                            Email password reset link
-                        </Button>
-                    </div>
-                </form>
-
-                <div className="space-x-1 text-center text-sm text-muted-foreground">
-                    <span>Or, return to</span>
-                    <TextLink href={route('login')}>log in</TextLink>
+            <form onSubmit={submit} className="flex flex-col gap-5">
+                <div className="grid gap-1.5">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                        id="email"
+                        type="email"
+                        name="email"
+                        autoComplete="off"
+                        value={data.email}
+                        autoFocus
+                        onChange={(e) => setData('email', e.target.value)}
+                        placeholder="email@example.com"
+                    />
+                    <InputError message={errors.email} />
                 </div>
-            </div>
+
+                <Button className="w-full" disabled={processing}>
+                    {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
+                    Kirim Tautan Reset
+                </Button>
+
+                <p className="text-center text-sm text-muted-foreground">
+                    Atau kembali ke <TextLink href={route('login')}>halaman masuk</TextLink>
+                </p>
+            </form>
         </AuthLayout>
     );
 }

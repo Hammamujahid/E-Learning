@@ -1,217 +1,142 @@
+import { DocumentViewer, FileTypeBadge, MetaBadge, NoFilePlaceholder } from '@/components/document-viewer';
+import { PageHeader, SectionLabel, SurfaceCard } from '@/components/page-header';
+import { ScoreBadge } from '@/components/table-cells';
+import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
-import { api } from '@/lib/api';
-import { getUser } from '@/lib/auth';
 import { BreadcrumbItem } from '@/types';
-import { LearningMaterial } from '@/types/interfaces';
-import { Head, router, usePage } from '@inertiajs/react';
-import { AxiosError } from 'axios';
-import { BookOpen, FileText, Loader2 } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
-import { toast } from 'sonner';
+import { Head, Link, useForm } from '@inertiajs/react';
+import { BookOpen, CalendarDays, ExternalLink, FileText, HelpCircle, Loader2, PlayCircle, User as UserIcon } from 'lucide-react';
 
 const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Daftar Materi', href: '/user/learning-material' },
-    { title: 'Detail Materi', href: '' },
+    { title: 'Materi', href: '/user/learning-material' },
+    { title: 'Detail', href: '' },
 ];
 
-const DUMMY_FILE = 'uploads/dummy-materi.pdf';
-
-function MetaBadge({ icon, label }: { icon: React.ReactNode; label: string }) {
-    return (
-        <div className="flex items-center gap-1.5 rounded-lg bg-muted/50 px-3 py-1.5 text-sm text-muted-foreground">
-            {icon}
-            <span>{label}</span>
-        </div>
-    );
+interface MaterialProp {
+    id: number;
+    name: string;
+    description: string | null;
+    file_path: string | null;
+    created_at: string | null;
+    subject: { id: number; name: string } | null;
+    creator_name: string | null;
+    question_count: number;
 }
 
-function DocumentViewer({ filePath }: { filePath: string }) {
-    const fixedUrl = filePath.replace('/image/upload/', '/raw/upload/');
-
-    const ext = fixedUrl.split('?')[0].split('.').pop()?.toLowerCase();
-    const fileUrl = fixedUrl;
-
-    if (ext === 'pdf') {
-        return <iframe src={fileUrl} className="h-[600px] w-full rounded-lg border border-border/20" title="Document Viewer" />;
-    }
-
-    if (['doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'].includes(ext ?? '')) {
-        return (
-            <iframe
-                src={`https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`}
-                className="h-[600px] w-full rounded-lg border border-border/20"
-                title="Document Viewer"
-            />
-        );
-    }
-
-    if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext ?? '')) {
-        return <img src={fileUrl} alt="Materi" className="w-full rounded-lg border border-border/20 object-contain" />;
-    }
-
-    return (
-        <div className="flex h-48 flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border/30 text-muted-foreground">
-            <FileText className="h-10 w-10 opacity-40" />
-            <p className="text-sm">Format tidak didukung untuk preview</p>
-            <a
-                href={fileUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="rounded-md border border-border/30 px-3 py-1.5 text-xs transition hover:bg-muted"
-            >
-                Buka File
-            </a>
-        </div>
-    );
+interface ShowProps {
+    material: MaterialProp;
+    inProgressAttemptId: number | null;
+    lastResult: { id: number; score: number } | null;
 }
 
-export default function Show() {
-    const { id } = usePage<{ id: number }>().props;
-    const [user] = useState(() => getUser());
-    const [material, setMaterial] = useState<LearningMaterial | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [creatingAttempt, setCreatingAttempt] = useState(false);
+export default function Show({ material, inProgressAttemptId, lastResult }: ShowProps) {
+    const { post, processing } = useForm({});
 
-    const fetchMaterial = useCallback(async () => {
-        setLoading(true);
-        try {
-            const response = await api.get(`/api/learning-materials/${id}`, {
-                params: { subject: true },
-            });
-            setMaterial(response.data.data);
-        } catch (err) {
-            const error = err as AxiosError<{ message?: string }>;
-            toast.error(error.response?.data?.message ?? 'Gagal memuat data');
-        } finally {
-            setLoading(false);
-        }
-    }, [id]);
+    const startQuiz = () => post(route('user.quiz.start', material.id));
 
-    const handleCreateQuestionAttempt = async () => {
-        setCreatingAttempt(true);
-        try {
-            const response = await api.post(`/api/quiz-attempt`, {
-                learning_material_id: id,
-                user_id: user?.id,
-                score: 0,
-                is_deleted: false,
-            });
-
-            const attemptId = response.data.data.id;
-            router.visit(`/user/questions/${attemptId}`);
-        } catch (err) {
-            const error = err as AxiosError<{ message?: string }>;
-            toast.error(error.response?.data?.message ?? 'Gagal membuat percobaan soal');
-        } finally {
-            setCreatingAttempt(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchMaterial();
-    }, [fetchMaterial]);
-
-    if (loading || !material) {
-        return (
-            <div className="flex h-screen items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
-        );
-    }
-
-    const filePath = material.file_path ?? DUMMY_FILE;
-    const fileName = filePath.split('/').pop() ?? filePath;
-    const fileExt = fileName.split('.').pop()?.toUpperCase() ?? 'FILE';
+    const fileName = material.file_path?.split('/').pop() ?? null;
 
     const createdDate = material.created_at
-        ? new Date(material.created_at).toLocaleDateString('id-ID', {
-              day: 'numeric',
-              month: 'long',
-              year: 'numeric',
-          })
+        ? new Date(material.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
         : '—';
 
-    const extColorMap: Record<string, string> = {
-        PDF: 'bg-red-100 text-red-700',
-        DOCX: 'bg-blue-100 text-blue-700',
-        DOC: 'bg-blue-100 text-blue-700',
-        PPTX: 'bg-orange-100 text-orange-700',
-        PPT: 'bg-orange-100 text-orange-700',
-        XLSX: 'bg-green-100 text-green-700',
-    };
-    const extColor = extColorMap[fileExt] ?? 'bg-gray-100 text-gray-700';
+    const hasQuestions = material.question_count > 0;
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Detail Learning Material" />
+            <Head title={material.name} />
 
-            <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 p-4">
-                {/* Page header */}
-                <div className="flex items-start justify-between gap-4">
-                    <div>
-                        <h1 className="text-xl font-medium text-primary">Detail Materi</h1>
-                        <p className="text-sm text-muted-foreground">Informasi lengkap mengenai materi pembelajaran</p>
-                    </div>
-                    <button
-                        onClick={handleCreateQuestionAttempt}
-                        disabled={creatingAttempt}
-                        className="flex-shrink-0 cursor-pointer rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm text-black transition hover:bg-gray-100 disabled:opacity-60"
-                    >
-                        {creatingAttempt ? 'Loading...' : 'Jawab Soal'}
-                    </button>
-                </div>
+            <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
+                <PageHeader
+                    title={material.name}
+                    description={material.subject?.name ? `Mata pelajaran: ${material.subject.name}` : 'Tanpa mata pelajaran'}
+                />
 
-                {/* Hero card */}
-                <div className="rounded-xl border border-muted-foreground/20 bg-background p-5 shadow-sm">
-                    <div className="flex items-start gap-4">
-                        <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl bg-indigo-100">
-                            <FileText className="h-6 w-6 text-indigo-600" />
+                {/* Panggilan aksi quiz */}
+                <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-border bg-card p-5 shadow-card">
+                    <div className="flex items-start gap-3.5">
+                        <div className="rounded-lg bg-primary-soft p-2.5 text-primary">
+                            <HelpCircle className="h-5 w-5" />
                         </div>
-                        <div className="flex flex-1 flex-col gap-3">
-                            <div>
-                                <h2 className="text-lg font-medium text-primary">{material.name}</h2>
-                                <p className="mt-1 text-sm text-muted-foreground">{createdDate}</p>
-                            </div>
-                            <div className="flex flex-wrap">
-                                {material.subject?.name && <MetaBadge icon={<BookOpen className="h-3.5 w-3.5" />} label={material.subject.name} />}
-                            </div>
+                        <div>
+                            <p className="font-medium text-foreground">
+                                {hasQuestions ? `Quiz tersedia · ${material.question_count} soal` : 'Quiz belum tersedia'}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                                {inProgressAttemptId
+                                    ? 'Kamu punya pengerjaan yang belum dikirim.'
+                                    : hasQuestions
+                                      ? 'Uji pemahamanmu setelah membaca materi.'
+                                      : 'Guru belum menambahkan soal untuk materi ini.'}
+                            </p>
                         </div>
                     </div>
-                </div>
 
-                {/* Deskripsi */}
-                <div className="rounded-xl border border-muted-foreground/20 bg-background p-5 shadow-sm">
-                    <p className="mb-3 text-xs font-medium tracking-widest text-muted-foreground/60 uppercase">Deskripsi</p>
-                    <p className="text-sm leading-relaxed text-primary/80">
-                        {material.description || <span className="text-muted-foreground italic">Tidak ada deskripsi.</span>}
-                    </p>
-                </div>
-
-                <div className="rounded-xl border border-muted-foreground/20 bg-background p-5 shadow-sm">
-                    <div className="mb-4 flex items-center justify-between">
-                        <p className="text-xs font-medium tracking-widest text-muted-foreground/60 uppercase">File Materi</p>
-                        <div className="flex items-center gap-2">
-                            <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${extColor}`}>{fileExt}</span>
-                            <span className="max-w-[200px] truncate text-xs text-muted-foreground">{fileName}</span>
-                            <a
-                                href={filePath}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="rounded-md border border-border/30 px-2.5 py-1 text-xs transition hover:bg-muted"
+                    <div className="flex flex-wrap items-center gap-2">
+                        {lastResult && (
+                            <Link
+                                href={route('user.quiz.result', lastResult.id)}
+                                className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium transition-colors hover:bg-muted"
                             >
-                                Buka
-                            </a>
+                                Hasil terakhir
+                                <ScoreBadge score={lastResult.score} />
+                            </Link>
+                        )}
+
+                        {hasQuestions && (
+                            <Button onClick={startQuiz} disabled={processing}>
+                                {processing ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlayCircle className="h-4 w-4" />}
+                                {inProgressAttemptId ? 'Lanjutkan Quiz' : 'Mulai Quiz'}
+                            </Button>
+                        )}
+                    </div>
+                </div>
+
+                {/* Deskripsi & meta */}
+                <SurfaceCard className="flex flex-col gap-4">
+                    <div className="flex items-start gap-4">
+                        <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
+                            <FileText className="h-5 w-5" />
+                        </div>
+
+                        <div className="flex min-w-0 flex-1 flex-col gap-3">
+                            <p className="text-sm leading-relaxed text-muted-foreground">
+                                {material.description || <span className="italic">Materi ini belum memiliki deskripsi.</span>}
+                            </p>
+
+                            <div className="flex flex-wrap gap-2">
+                                {material.subject?.name && <MetaBadge icon={<BookOpen className="h-3.5 w-3.5" />} label={material.subject.name} />}
+                                {material.creator_name && <MetaBadge icon={<UserIcon className="h-3.5 w-3.5" />} label={material.creator_name} />}
+                                <MetaBadge icon={<CalendarDays className="h-3.5 w-3.5" />} label={createdDate} />
+                            </div>
                         </div>
                     </div>
+                </SurfaceCard>
 
-                    <DocumentViewer filePath={filePath} />
+                {/* File materi */}
+                <SurfaceCard>
+                    <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+                        <SectionLabel>Bahan Bacaan</SectionLabel>
 
-                    {!material.file_path && (
-                        <p className="mt-2 text-center text-xs text-muted-foreground/50 italic">
-                            * Menampilkan file dummy — belum ada file yang diupload
-                        </p>
-                    )}
-                </div>
+                        {material.file_path && (
+                            <div className="flex items-center gap-2">
+                                <FileTypeBadge filePath={material.file_path} />
+                                <span className="max-w-[220px] truncate text-xs text-muted-foreground">{fileName}</span>
+                                <a
+                                    href={material.file_path}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2.5 py-1 text-xs font-medium transition-colors hover:bg-muted"
+                                >
+                                    <ExternalLink className="h-3 w-3" />
+                                    Buka
+                                </a>
+                            </div>
+                        )}
+                    </div>
+
+                    {material.file_path ? <DocumentViewer filePath={material.file_path} /> : <NoFilePlaceholder />}
+                </SurfaceCard>
             </div>
         </AppLayout>
     );
